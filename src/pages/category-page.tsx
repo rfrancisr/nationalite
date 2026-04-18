@@ -49,6 +49,7 @@ export default function CategoryPage() {
 
       <Link
         to="/flashcards"
+        state={{ categoryId: category.id }}
         className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl text-base font-semibold hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
       >
         Study this category

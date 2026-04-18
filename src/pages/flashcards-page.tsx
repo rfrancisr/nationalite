@@ -17,9 +17,9 @@ interface SessionCard {
 
 export default function FlashcardsPage() {
   const location = useLocation()
-  const missedIds = useMemo<string[] | null>(() => {
-    const state = location.state as { missedIds?: string[] } | null
-    return state?.missedIds ?? null
+  const { missedIds, categoryId } = useMemo(() => {
+    const state = location.state as { missedIds?: string[]; categoryId?: string } | null
+    return { missedIds: state?.missedIds ?? null, categoryId: state?.categoryId ?? null }
   }, [location.state])
 
   const { data: categories = [] } = useCategories()
@@ -37,6 +37,11 @@ export default function FlashcardsPage() {
   useEffect(() => {
     if (missedIds && missedIds.length > 0) {
       setDeckId('missed')
+      setIndex(0)
+      setFlipped(false)
+      setDone(false)
+    } else if (categoryId) {
+      setDeckId(categoryId)
       setIndex(0)
       setFlipped(false)
       setDone(false)
