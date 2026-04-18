@@ -6,13 +6,10 @@ import ProtectedRoute from '@/components/protected-route'
 import LoginPage from '@/pages/login-page'
 import QuestionsPage from '@/pages/questions-page'
 import CategoryPage from '@/pages/category-page'
+import FlashcardsPage from '@/pages/flashcards-page'
 
 function DashboardPlaceholder() {
   return <div className="p-8 text-2xl font-semibold text-indigo-600">Dashboard — coming in M5</div>
-}
-
-function FlashcardsPlaceholder() {
-  return <div className="p-8 text-2xl font-semibold text-indigo-600">Flashcards — coming in M3</div>
 }
 
 function QuizPlaceholder() {
@@ -40,7 +37,7 @@ export default function App() {
         <Route path="/" element={<DashboardPlaceholder />} />
         <Route path="/questions" element={<QuestionsPage />} />
         <Route path="/categories/:slug" element={<CategoryPage />} />
-        <Route path="/flashcards" element={<FlashcardsPlaceholder />} />
+        <Route path="/flashcards" element={<FlashcardsPage />} />
         <Route path="/quiz" element={<QuizPlaceholder />} />
       </Route>
     </Routes>
