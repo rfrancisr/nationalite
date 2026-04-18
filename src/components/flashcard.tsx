@@ -11,9 +11,9 @@ export default function Flashcard({ question, answers, flipped, onFlip }: Props)
   return (
     <div className="perspective-1000 w-full max-w-lg mx-auto" style={{ perspective: 1000 }}>
       <motion.button
-        className="relative w-full min-h-64 cursor-pointer"
+        className="relative w-full min-h-52 sm:min-h-64 cursor-pointer select-none"
         onClick={onFlip}
-        style={{ transformStyle: 'preserve-3d' }}
+        style={{ transformStyle: 'preserve-3d', touchAction: 'manipulation' }}
         animate={{ rotateY: flipped ? 180 : 0 }}
         transition={{ duration: 0.25, ease: 'easeInOut' }}
         aria-label={flipped ? 'Card answer' : 'Card question — click to flip'}

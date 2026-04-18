@@ -161,12 +161,15 @@ export default function FlashcardsPage() {
   }
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-8 space-y-8">
+    <div className="max-w-lg mx-auto px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
       <div className="flex items-center justify-between text-sm text-gray-500">
-        <button onClick={() => setDeckId(null)} className="hover:text-indigo-600 transition-colors">
+        <button
+          onClick={() => setDeckId(null)}
+          className="py-2 pr-2 hover:text-indigo-600 transition-colors"
+        >
           ← Change deck
         </button>
-        <span>
+        <span className="font-medium">
           {index + 1} / {deck.length}
         </span>
       </div>
