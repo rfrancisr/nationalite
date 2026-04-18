@@ -38,6 +38,57 @@ describe('buildOptions', () => {
     const options = buildOptions(bank[0], bank)
     expect(new Set(options).size).toBe(4)
   })
+
+  it('prefers numeric distractors for a numeric correct answer', () => {
+    const numericBank = [
+      makeQuestion('1', ['100']),
+      makeQuestion('2', ['9']),
+      makeQuestion('3', ['27']),
+      makeQuestion('4', ['50']),
+      makeQuestion('5', ['13']),
+      makeQuestion('6', ['George Washington']),
+      makeQuestion('7', ['freedom of speech']),
+      makeQuestion('8', ['Congress']),
+    ]
+    // Run multiple times since buildOptions is random
+    for (let i = 0; i < 20; i++) {
+      const options = buildOptions(numericBank[0], numericBank)
+      const distractors = options.filter((o) => o !== '100')
+      expect(distractors.every((d) => /^\d+$/.test(d))).toBe(true)
+    }
+  })
+
+  it('prefers name distractors for a name correct answer', () => {
+    const nameBank = [
+      makeQuestion('1', ['George Washington']),
+      makeQuestion('2', ['Abraham Lincoln']),
+      makeQuestion('3', ['Barack Obama']),
+      makeQuestion('4', ['Benjamin Franklin']),
+      makeQuestion('5', ['Thomas Jefferson']),
+      makeQuestion('6', ['100']),
+      makeQuestion('7', ['freedom of speech']),
+      makeQuestion('8', ['Congress']),
+    ]
+    for (let i = 0; i < 20; i++) {
+      const options = buildOptions(nameBank[0], nameBank)
+      const distractors = options.filter((o) => o !== 'George Washington')
+      const names = ['Abraham Lincoln', 'Barack Obama', 'Benjamin Franklin', 'Thomas Jefferson']
+      expect(distractors.every((d) => names.includes(d))).toBe(true)
+    }
+  })
+
+  it('falls back to any distractor when not enough same-type answers exist', () => {
+    const mixedBank = [
+      makeQuestion('1', ['100']),
+      makeQuestion('2', ['9']),   // only 1 other number
+      makeQuestion('3', ['George Washington']),
+      makeQuestion('4', ['freedom of speech']),
+      makeQuestion('5', ['Congress']),
+    ]
+    const options = buildOptions(mixedBank[0], mixedBank)
+    expect(options).toHaveLength(4)
+    expect(options).toContain('100')
+  })
 })
 
 describe('isCorrect', () => {
