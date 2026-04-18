@@ -17,7 +17,7 @@ function makeSession(id: string, finishedAt: string): QuizSession {
 
 describe('countDueToday', () => {
   it('returns 0 for empty input', () => {
-    expect(countDueToday([])).toBe(0)
+    expect(countDueToday([], [])).toBe(0)
   })
 
   it('counts cards with next_review_at in the past', () => {
@@ -28,12 +28,26 @@ describe('countDueToday', () => {
       makeProgress('2', '', 1, past),
       makeProgress('3', '', 1, future),
     ]
-    expect(countDueToday(progress)).toBe(2)
+    expect(countDueToday(progress, ['q1', 'q2', 'q3'])).toBe(2)
   })
 
   it('returns 0 when all cards are in the future', () => {
     const future = new Date(Date.now() + 86_400_000).toISOString()
-    expect(countDueToday([makeProgress('1', '', 1, future)])).toBe(0)
+    expect(countDueToday([makeProgress('1', '', 1, future)], ['q1'])).toBe(0)
+  })
+
+  it('counts questions with no progress record as due', () => {
+    const future = new Date(Date.now() + 86_400_000).toISOString()
+    const progress = [makeProgress('1', '', 1, future)]
+    // q1 has a future review, q2 has no record — q2 should count as due
+    expect(countDueToday(progress, ['q1', 'q2'])).toBe(1)
+  })
+
+  it('counts both overdue and new (no record) questions', () => {
+    const past = new Date(Date.now() - 86_400_000).toISOString()
+    const progress = [makeProgress('1', '', 1, past)]
+    // q1 is overdue, q2 has no record
+    expect(countDueToday(progress, ['q1', 'q2'])).toBe(2)
   })
 })
 

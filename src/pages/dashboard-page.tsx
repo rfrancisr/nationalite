@@ -16,7 +16,7 @@ export default function DashboardPage() {
 
   const masteredCount = useMemo(() => progress.filter((p) => p.status === 'mastered').length, [progress])
   const masteryPct = masteredCount / TOTAL_QUESTIONS
-  const dueToday = useMemo(() => countDueToday(progress), [progress])
+  const dueToday = useMemo(() => countDueToday(progress, questions.map((q) => q.id)), [progress, questions])
   const streak = useMemo(() => calcStreak(progress, sessions), [progress, sessions])
 
   const categoryStats = useMemo(() =>

@@ -1,8 +1,12 @@
 import type { UserProgress, QuizSession } from '@/types'
 
-export function countDueToday(progress: UserProgress[]): number {
+export function countDueToday(progress: UserProgress[], questionIds: string[]): number {
   const now = new Date()
-  return progress.filter((p) => new Date(p.next_review_at) <= now).length
+  const progressMap = new Map(progress.map((p) => [p.question_id, p]))
+  return questionIds.filter((id) => {
+    const p = progressMap.get(id)
+    return !p || new Date(p.next_review_at) <= now
+  }).length
 }
 
 export function calcStreak(
