@@ -8,11 +8,8 @@ import QuestionsPage from '@/pages/questions-page'
 import CategoryPage from '@/pages/category-page'
 import FlashcardsPage from '@/pages/flashcards-page'
 import QuizPage from '@/pages/quiz-page'
+import DashboardPage from '@/pages/dashboard-page'
 import ProfilePage from '@/pages/profile-page'
-
-function DashboardPlaceholder() {
-  return <div className="p-8 text-2xl font-semibold text-indigo-600">Dashboard — coming in M5</div>
-}
 
 export default function App() {
   const init = useAuthStore((s) => s.init)
@@ -32,7 +29,7 @@ export default function App() {
           </ProtectedRoute>
         }
       >
-        <Route path="/" element={<DashboardPlaceholder />} />
+        <Route path="/" element={<DashboardPage />} />
         <Route path="/questions" element={<QuestionsPage />} />
         <Route path="/categories/:slug" element={<CategoryPage />} />
         <Route path="/flashcards" element={<FlashcardsPage />} />

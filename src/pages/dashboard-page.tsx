@@ -1,0 +1,193 @@
+import { useMemo } from 'react'
+import { Link } from 'react-router-dom'
+import { useCategories } from '@/hooks/use-categories'
+import { useQuestions } from '@/hooks/use-questions'
+import { useUserProgress } from '@/hooks/use-user-progress'
+import { useQuizSessions } from '@/hooks/use-quiz-sessions'
+import { calcStreak, countDueToday } from '@/utils/dashboard'
+import { TOTAL_QUESTIONS, QUIZ_SIZE, PASS_THRESHOLD } from '@/utils/constants'
+import type { QuizSession } from '@/types'
+
+export default function DashboardPage() {
+  const { data: categories = [] } = useCategories()
+  const { data: questions = [] } = useQuestions()
+  const { data: progress = [] } = useUserProgress()
+  const { data: sessions = [] } = useQuizSessions()
+
+  const masteredCount = useMemo(() => progress.filter((p) => p.status === 'mastered').length, [progress])
+  const masteryPct = masteredCount / TOTAL_QUESTIONS
+  const dueToday = useMemo(() => countDueToday(progress), [progress])
+  const streak = useMemo(() => calcStreak(progress, sessions), [progress, sessions])
+
+  const categoryStats = useMemo(() =>
+    categories.map((cat) => {
+      const catQuestions = questions.filter((q) => q.category_id === cat.id)
+      const catMastered = progress.filter(
+        (p) => p.status === 'mastered' && catQuestions.some((q) => q.id === p.question_id),
+      ).length
+      return { cat, total: catQuestions.length, mastered: catMastered }
+    }),
+    [categories, questions, progress],
+  )
+
+  return (
+    <div className="max-w-2xl mx-auto px-4 py-8 space-y-8">
+      <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+
+      {/* Progress ring + quick stats */}
+      <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm flex flex-col sm:flex-row items-center gap-6">
+        <div className="relative shrink-0">
+          <ProgressRing pct={masteryPct} />
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className="text-2xl font-bold text-indigo-600">{Math.round(masteryPct * 100)}%</span>
+            <span className="text-xs text-gray-500">mastered</span>
+          </div>
+        </div>
+        <div className="flex-1 space-y-2 text-center sm:text-left">
+          <p className="text-lg font-semibold text-gray-900">
+            {masteredCount} mastered
+          </p>
+          <p className="text-sm text-gray-500">{masteredCount} of {TOTAL_QUESTIONS} questions</p>
+          <div className="flex gap-6 justify-center sm:justify-start pt-2">
+            <Stat label="Due today" value={dueToday} />
+            <Stat label="Streak" value={`${streak}d`} />
+          </div>
+        </div>
+      </div>
+
+      {/* Quick actions */}
+      <div className="grid grid-cols-2 gap-4">
+        <Link
+          to="/flashcards"
+          className="flex flex-col items-center justify-center gap-2 p-5 bg-indigo-600 text-white rounded-2xl font-semibold hover:bg-indigo-700 transition-colors"
+        >
+          <span className="text-3xl" aria-hidden="true">🃏</span>
+          <span>Start Flashcards</span>
+        </Link>
+        <Link
+          to="/quiz"
+          className="flex flex-col items-center justify-center gap-2 p-5 bg-white border border-gray-200 text-gray-800 rounded-2xl font-semibold hover:border-indigo-400 hover:shadow-sm transition-all"
+        >
+          <span className="text-3xl" aria-hidden="true">📝</span>
+          <span>Take a Quiz</span>
+        </Link>
+      </div>
+
+      {/* Recent quizzes */}
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold text-gray-900">Recent Quizzes</h2>
+        {sessions.length === 0 ? (
+          <p className="text-sm text-gray-400">No quizzes yet — take your first one!</p>
+        ) : (
+          <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm space-y-3">
+            <QuizSparkline sessions={sessions} />
+            <div className="flex gap-3 flex-wrap">
+              {[...sessions].reverse().map((s) => (
+                <div
+                  key={s.id}
+                  className={`flex flex-col items-center px-3 py-2 rounded-xl text-sm font-medium ${
+                    s.passed ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+                  }`}
+                >
+                  <span className="text-lg font-bold">{s.score}</span>
+                  <span className="text-xs opacity-70">/{QUIZ_SIZE}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* Category breakdown */}
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold text-gray-900">By Category</h2>
+        <div className="space-y-2">
+          {categoryStats.map(({ cat, total, mastered }) => (
+            <Link
+              key={cat.id}
+              to={`/categories/${cat.slug}`}
+              className="flex items-center gap-3 bg-white rounded-xl border border-gray-200 p-3 hover:border-indigo-300 transition-colors group"
+            >
+              <span className="text-xl shrink-0">{cat.icon}</span>
+              <div className="flex-1 min-w-0">
+                <div className="flex justify-between items-baseline mb-1">
+                  <span className="text-sm font-medium text-gray-800 truncate group-hover:text-indigo-600">
+                    {cat.name}
+                  </span>
+                  <span className="text-xs text-gray-500 shrink-0 ml-2">{mastered}/{total}</span>
+                </div>
+                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-indigo-500 rounded-full transition-all"
+                    style={{ width: total > 0 ? `${(mastered / total) * 100}%` : '0%' }}
+                  />
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+    </div>
+  )
+}
+
+function ProgressRing({ pct }: { pct: number }) {
+  const r = 15.9155
+  const circ = 100
+  const dash = circ * Math.min(pct, 1)
+  return (
+    <svg viewBox="0 0 36 36" width={120} height={120} className="-rotate-90" aria-hidden="true">
+      <circle cx="18" cy="18" r={r} fill="none" stroke="#e5e7eb" strokeWidth="3" />
+      <circle
+        cx="18" cy="18" r={r}
+        fill="none"
+        stroke="#4f46e5"
+        strokeWidth="3"
+        strokeDasharray={`${dash} ${circ - dash}`}
+        strokeLinecap="round"
+      />
+    </svg>
+  )
+}
+
+function Stat({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div aria-label={label}>
+      <p className="text-xl font-bold text-gray-900">{value}</p>
+      <p className="text-xs text-gray-500">{label}</p>
+    </div>
+  )
+}
+
+function QuizSparkline({ sessions }: { sessions: QuizSession[] }) {
+  const sorted = [...sessions].reverse()
+  const W = 300
+  const H = 50
+  const PAD = 8
+  const xStep = sorted.length > 1 ? (W - 2 * PAD) / (sorted.length - 1) : 0
+  const yScale = (score: number) => PAD + (1 - score / QUIZ_SIZE) * (H - 2 * PAD)
+  const thresholdY = yScale(PASS_THRESHOLD)
+
+  const points = sorted
+    .map((s, i) => `${PAD + i * xStep},${yScale(s.score ?? 0)}`)
+    .join(' ')
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-12" aria-hidden="true">
+      <line x1={PAD} y1={thresholdY} x2={W - PAD} y2={thresholdY}
+        stroke="#d1d5db" strokeWidth="1" strokeDasharray="4 3" />
+      {sorted.length > 1 && (
+        <polyline points={points} fill="none" stroke="#a5b4fc" strokeWidth="2"
+          strokeLinecap="round" strokeLinejoin="round" />
+      )}
+      {sorted.map((s, i) => (
+        <circle key={s.id}
+          cx={PAD + i * xStep}
+          cy={yScale(s.score ?? 0)}
+          r="4"
+          fill={s.passed ? '#22c55e' : '#ef4444'}
+        />
+      ))}
+    </svg>
+  )
+}
