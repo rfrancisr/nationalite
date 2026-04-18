@@ -253,7 +253,7 @@ export default function QuizPage() {
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-        <p className="text-xl font-medium text-gray-900">{current.question}</p>
+        <p className="text-lg font-medium text-gray-900">{current.question}</p>
       </div>
 
       {phase === 'question' && (
@@ -262,7 +262,7 @@ export default function QuizPage() {
 
       <div className="space-y-3" role="group" aria-label="Answer options">
         {options.map((option, i) => {
-          let cls = 'w-full text-left p-4 rounded-xl border font-medium transition-colors text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 '
+          let cls = 'w-full text-left p-3 rounded-xl border font-medium transition-colors text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 '
           if (phase === 'feedback') {
             if (isCorrect(option, current)) {
               cls += 'border-green-400 bg-green-50 text-green-800'
@@ -292,7 +292,7 @@ export default function QuizPage() {
       {phase === 'feedback' && (
         <button
           onClick={handleNext}
-          className="w-full py-4 bg-indigo-600 text-white rounded-xl font-semibold text-lg hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+          className="w-full py-3 bg-indigo-600 text-white rounded-xl font-semibold text-base hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
         >
           {isLast ? 'See results' : 'Next question'}{' '}
           <span className="text-indigo-200 font-normal text-base ml-1">(Enter)</span>
