@@ -37,8 +37,11 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   signUp: async (email, password) => {
-    const { error } = await supabase.auth.signUp({ email, password })
-    return { error: error?.message ?? null }
+    const { data, error } = await supabase.auth.signUp({ email, password })
+    if (error) return { error: error.message }
+    // Supabase returns no session when the email already exists (silent dedup)
+    if (!data.session) return { error: 'An account with this email already exists. Please sign in instead.' }
+    return { error: null }
   },
 
   signOut: async () => {
