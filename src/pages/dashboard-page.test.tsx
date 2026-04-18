@@ -56,8 +56,7 @@ describe('DashboardPage', () => {
 
   it('shows due today count', () => {
     wrap(<DashboardPage />)
-    expect(screen.getByText(/due today/i)).toBeInTheDocument()
-    // up1 has past next_review_at → 1 due
+    // up1 has past next_review_at → 1 due; use aria-label to avoid ambiguity with session cards
     const statEl = screen.getByLabelText(/due today/i)
     expect(statEl.textContent).toMatch(/1/)
   })

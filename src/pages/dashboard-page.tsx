@@ -5,6 +5,7 @@ import { useQuestions } from '@/hooks/use-questions'
 import { useUserProgress } from '@/hooks/use-user-progress'
 import { useQuizSessions } from '@/hooks/use-quiz-sessions'
 import { calcStreak, countDueToday } from '@/utils/dashboard'
+import { getYesterdaysMissedIds, getStudiedTodayIds } from '@/utils/daily-plan'
 import { TOTAL_QUESTIONS, QUIZ_SIZE, PASS_THRESHOLD } from '@/utils/constants'
 import type { QuizSession } from '@/types'
 
@@ -18,6 +19,8 @@ export default function DashboardPage() {
   const masteryPct = masteredCount / TOTAL_QUESTIONS
   const dueToday = useMemo(() => countDueToday(progress, questions.map((q) => q.id)), [progress, questions])
   const streak = useMemo(() => calcStreak(progress, sessions), [progress, sessions])
+  const yesterdayMissedIds = useMemo(() => getYesterdaysMissedIds(sessions), [sessions])
+  const studiedTodayIds = useMemo(() => getStudiedTodayIds(progress), [progress])
 
   const categoryStats = useMemo(() =>
     categories.map((cat) => {
@@ -54,6 +57,48 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Today's Plan */}
+      <section className="space-y-3">
+        <h2 className="text-xl font-semibold text-gray-900">Today's Plan</h2>
+        <div className="space-y-3">
+          <SessionCard
+            emoji="☀️"
+            title="Morning Warm-up"
+            subtitle="5 min"
+            description={
+              yesterdayMissedIds.length > 0
+                ? `${yesterdayMissedIds.length} missed yesterday`
+                : 'Nothing missed yesterday'
+            }
+            disabled={yesterdayMissedIds.length === 0}
+            to="/flashcards"
+            state={{ missedIds: yesterdayMissedIds, mixed: true }}
+          />
+          <SessionCard
+            emoji="🌤️"
+            title="Midday Review"
+            subtitle="10 min"
+            description={dueToday > 0 ? `${dueToday} cards due today` : 'All caught up!'}
+            disabled={dueToday === 0}
+            to="/flashcards"
+            state={{ preselectedDeck: 'due' }}
+          />
+          <SessionCard
+            emoji="🌙"
+            title="Evening Recap"
+            subtitle="5 min"
+            description={
+              studiedTodayIds.length > 0
+                ? `${studiedTodayIds.length} studied today`
+                : 'Study some cards first'
+            }
+            disabled={studiedTodayIds.length === 0}
+            to="/flashcards"
+            state={{ studiedIds: studiedTodayIds, mixed: true }}
+          />
+        </div>
+      </section>
 
       {/* Quick actions */}
       <div className="grid grid-cols-2 gap-4">
@@ -156,6 +201,49 @@ function Stat({ label, value }: { label: string; value: string | number }) {
       <p className="text-2xl font-bold text-gray-900">{value}</p>
       <p className="text-sm text-gray-600">{label}</p>
     </div>
+  )
+}
+
+function SessionCard({
+  emoji,
+  title,
+  subtitle,
+  description,
+  disabled,
+  to,
+  state,
+}: {
+  emoji: string
+  title: string
+  subtitle: string
+  description: string
+  disabled: boolean
+  to: string
+  state: Record<string, unknown>
+}) {
+  const base =
+    'flex items-center gap-4 p-5 rounded-xl border transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'
+  const active = 'bg-white border-gray-200 hover:border-indigo-400 hover:shadow-sm'
+  const inactive = 'bg-gray-50 border-gray-100 opacity-50 cursor-not-allowed pointer-events-none'
+
+  return (
+    <Link
+      to={to}
+      state={state}
+      aria-disabled={disabled}
+      tabIndex={disabled ? -1 : undefined}
+      className={`${base} ${disabled ? inactive : active}`}
+    >
+      <span className="text-3xl shrink-0" aria-hidden="true">{emoji}</span>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-baseline justify-between gap-2">
+          <p className="text-lg font-semibold text-gray-900">{title}</p>
+          <span className="text-sm text-gray-500 shrink-0">{subtitle}</span>
+        </div>
+        <p className="text-base text-gray-600">{description}</p>
+      </div>
+      {!disabled && <span className="text-gray-400 text-xl shrink-0">→</span>}
+    </Link>
   )
 }
 
