@@ -1,8 +1,10 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuestions } from '@/hooks/use-questions'
+import { useCategories } from '@/hooks/use-categories'
 import { useSaveQuizSession } from '@/hooks/use-save-quiz-session'
 import { pickQuizQuestions, buildOptions, isCorrect } from '@/utils/quiz'
+import { quizCategoryBreakdown } from '@/utils/quiz-analysis'
 import { QUIZ_SIZE, PASS_THRESHOLD } from '@/utils/constants'
 import type { Question, QuizAnswer } from '@/types'
 
@@ -11,6 +13,7 @@ type Phase = 'idle' | 'question' | 'feedback' | 'done'
 export default function QuizPage() {
   const navigate = useNavigate()
   const { data: allQuestions = [] } = useQuestions()
+  const { data: categories = [] } = useCategories()
   const { mutate: saveSession } = useSaveQuizSession()
 
   const [phase, setPhase] = useState<Phase>('idle')
@@ -107,9 +110,12 @@ export default function QuizPage() {
     const missedIds = quizQuestions
       .filter((q) => answers.find((a) => a.question_id === q.id && !a.correct))
       .map((q) => q.id)
+    const categoryBreakdown = quizCategoryBreakdown(answers, quizQuestions, categories)
+    const topMissedCat = categoryBreakdown[0]?.category ?? null
 
     return (
       <div className="max-w-2xl mx-auto px-4 py-8 space-y-8">
+        {/* Score banner */}
         <div
           className={`rounded-2xl p-8 text-center ${
             passed ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
@@ -124,6 +130,49 @@ export default function QuizPage() {
           </div>
         </div>
 
+        {/* Category breakdown */}
+        {categoryBreakdown.length > 0 && (
+          <section className="space-y-3">
+            <h2 className="text-xl font-semibold text-gray-900">Where you struggled</h2>
+            <div className="space-y-2">
+              {categoryBreakdown.map(({ category, missed, total }, i) => (
+                <div
+                  key={category.id}
+                  className={`flex items-center gap-4 p-4 rounded-xl border ${
+                    i === 0
+                      ? 'bg-red-50 border-red-200'
+                      : 'bg-white border-gray-200'
+                  }`}
+                >
+                  <span className="text-2xl shrink-0">{category.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-baseline mb-1">
+                      <span className="text-base font-semibold text-gray-900 truncate">
+                        {category.name}
+                      </span>
+                      <span className={`text-sm font-medium shrink-0 ml-2 ${i === 0 ? 'text-red-700' : 'text-gray-600'}`}>
+                        {missed}/{total} wrong
+                      </span>
+                    </div>
+                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${i === 0 ? 'bg-red-400' : 'bg-amber-400'}`}
+                        style={{ width: `${(missed / total) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {topMissedCat && (
+              <p className="text-base text-gray-600">
+                Your Morning Warm-up tomorrow will include these questions.
+              </p>
+            )}
+          </section>
+        )}
+
+        {/* Actions */}
         <div className="flex gap-4 justify-center flex-wrap">
           <button
             onClick={startQuiz}
@@ -131,7 +180,15 @@ export default function QuizPage() {
           >
             Try again
           </button>
-          {missedIds.length > 0 && (
+          {topMissedCat && (
+            <button
+              onClick={() => navigate('/flashcards', { state: { categoryId: topMissedCat.id } })}
+              className="px-8 py-4 bg-amber-500 text-white rounded-xl font-semibold text-lg hover:bg-amber-600 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
+            >
+              Review {topMissedCat.icon} {topMissedCat.name}
+            </button>
+          )}
+          {missedIds.length > 0 && !topMissedCat && (
             <button
               onClick={() => navigate('/flashcards', { state: { missedIds } })}
               className="px-8 py-4 bg-amber-500 text-white rounded-xl font-semibold text-lg hover:bg-amber-600 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
@@ -141,6 +198,7 @@ export default function QuizPage() {
           )}
         </div>
 
+        {/* Answer review */}
         <div className="space-y-3">
           <h2 className="text-xl font-semibold text-gray-900">Answer review</h2>
           {quizQuestions.map((q, i) => {

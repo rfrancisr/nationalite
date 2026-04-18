@@ -19,6 +19,9 @@ vi.mock('react-router-dom', async () => {
 vi.mock('@/hooks/use-questions', () => ({
   useQuestions: () => ({ data: mockQuestions }),
 }))
+vi.mock('@/hooks/use-categories', () => ({
+  useCategories: () => ({ data: [{ id: 'cat1', name: 'Principles', slug: 'principles', icon: '🏛️' }] }),
+}))
 vi.mock('@/hooks/use-save-quiz-session', () => ({
   useSaveQuizSession: () => ({ mutate: mockSave }),
 }))
@@ -129,7 +132,7 @@ describe('QuizPage', () => {
     expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument()
   })
 
-  it('shows study missed button when at least one answer is wrong', () => {
+  it('shows review category button when at least one answer is wrong', () => {
     wrap(<QuizPage />)
     fireEvent.click(screen.getByRole('button', { name: /start quiz/i }))
 
@@ -138,10 +141,23 @@ describe('QuizPage', () => {
     fireEvent.click(screen.getByText('sets up the government'))
     fireEvent.click(screen.getByRole('button', { name: /see results/i }))
 
-    expect(screen.getByRole('button', { name: /study 1 missed/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /review.*principles/i })).toBeInTheDocument()
   })
 
-  it('does not show study missed button when all answers are correct', () => {
+  it('shows category breakdown when at least one answer is wrong', () => {
+    wrap(<QuizPage />)
+    fireEvent.click(screen.getByRole('button', { name: /start quiz/i }))
+
+    fireEvent.click(screen.getByText('Wrong A'))
+    fireEvent.click(screen.getByRole('button', { name: /next question/i }))
+    fireEvent.click(screen.getByText('sets up the government'))
+    fireEvent.click(screen.getByRole('button', { name: /see results/i }))
+
+    expect(screen.getByText(/where you struggled/i)).toBeInTheDocument()
+    expect(screen.getByText(/1\/2 wrong/i)).toBeInTheDocument()
+  })
+
+  it('does not show review category button when all answers are correct', () => {
     wrap(<QuizPage />)
     fireEvent.click(screen.getByRole('button', { name: /start quiz/i }))
 
@@ -150,10 +166,11 @@ describe('QuizPage', () => {
     fireEvent.click(screen.getByText('sets up the government'))
     fireEvent.click(screen.getByRole('button', { name: /see results/i }))
 
-    expect(screen.queryByRole('button', { name: /study.*missed/i })).not.toBeInTheDocument()
+    expect(screen.queryByText(/where you struggled/i)).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /review/i })).not.toBeInTheDocument()
   })
 
-  it('navigates to /flashcards with missedIds when study missed is clicked', () => {
+  it('navigates to /flashcards with categoryId when review button is clicked', () => {
     wrap(<QuizPage />)
     fireEvent.click(screen.getByRole('button', { name: /start quiz/i }))
 
@@ -162,8 +179,8 @@ describe('QuizPage', () => {
     fireEvent.click(screen.getByText('sets up the government'))
     fireEvent.click(screen.getByRole('button', { name: /see results/i }))
 
-    fireEvent.click(screen.getByRole('button', { name: /study 1 missed/i }))
+    fireEvent.click(screen.getByRole('button', { name: /review.*principles/i }))
 
-    expect(mockNavigate).toHaveBeenCalledWith('/flashcards', { state: { missedIds: ['q1'] } })
+    expect(mockNavigate).toHaveBeenCalledWith('/flashcards', { state: { categoryId: 'cat1' } })
   })
 })
