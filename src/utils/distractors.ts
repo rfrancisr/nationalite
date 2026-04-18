@@ -382,15 +382,13 @@ export const DISTRACTORS: Record<number, string[]> = {
 
   29: [
     // Q: Name your U.S. representative.
-    // Correct: Varies by district
-    'Your state governor',
-    'Your state senator',
-    'Your mayor',
-    'Your city council member',
-    'Your state attorney general',
-    'Your county commissioner',
-    'Your local judge',
-    'Your state treasurer',
+    // Correct: Suhas Subramanyam (VA-10)
+    'Bobby Scott',
+    'James Walkinshaw',
+    'Morgan Griffith',
+    'John McGuire',
+    'Eugene Vindman',
+    'Jen Kiggans',
   ],
 
   30: [
