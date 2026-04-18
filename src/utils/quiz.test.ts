@@ -39,18 +39,18 @@ describe('buildOptions', () => {
     expect(new Set(options).size).toBe(4)
   })
 
-  it('prefers numeric distractors for a numeric correct answer', () => {
+  it('prefers numeric distractors for a numeric correct answer (fallback path)', () => {
+    // Use numbers > 128 so curated distractors don't apply
     const numericBank = [
-      makeQuestion('1', ['100']),
-      makeQuestion('2', ['9']),
-      makeQuestion('3', ['27']),
-      makeQuestion('4', ['50']),
-      makeQuestion('5', ['13']),
-      makeQuestion('6', ['George Washington']),
-      makeQuestion('7', ['freedom of speech']),
-      makeQuestion('8', ['Congress']),
+      makeQuestion('1001', ['100']),
+      makeQuestion('1002', ['9']),
+      makeQuestion('1003', ['27']),
+      makeQuestion('1004', ['50']),
+      makeQuestion('1005', ['13']),
+      makeQuestion('1006', ['George Washington']),
+      makeQuestion('1007', ['freedom of speech']),
+      makeQuestion('1008', ['Congress']),
     ]
-    // Run multiple times since buildOptions is random
     for (let i = 0; i < 20; i++) {
       const options = buildOptions(numericBank[0], numericBank)
       const distractors = options.filter((o) => o !== '100')
@@ -58,16 +58,16 @@ describe('buildOptions', () => {
     }
   })
 
-  it('prefers name distractors for a name correct answer', () => {
+  it('prefers name distractors for a name correct answer (fallback path)', () => {
     const nameBank = [
-      makeQuestion('1', ['George Washington']),
-      makeQuestion('2', ['Abraham Lincoln']),
-      makeQuestion('3', ['Barack Obama']),
-      makeQuestion('4', ['Benjamin Franklin']),
-      makeQuestion('5', ['Thomas Jefferson']),
-      makeQuestion('6', ['100']),
-      makeQuestion('7', ['freedom of speech']),
-      makeQuestion('8', ['Congress']),
+      makeQuestion('1001', ['George Washington']),
+      makeQuestion('1002', ['Abraham Lincoln']),
+      makeQuestion('1003', ['Barack Obama']),
+      makeQuestion('1004', ['Benjamin Franklin']),
+      makeQuestion('1005', ['Thomas Jefferson']),
+      makeQuestion('1006', ['100']),
+      makeQuestion('1007', ['freedom of speech']),
+      makeQuestion('1008', ['Congress']),
     ]
     for (let i = 0; i < 20; i++) {
       const options = buildOptions(nameBank[0], nameBank)
@@ -79,13 +79,21 @@ describe('buildOptions', () => {
 
   it('falls back to any distractor when not enough same-type answers exist', () => {
     const mixedBank = [
-      makeQuestion('1', ['100']),
-      makeQuestion('2', ['9']),   // only 1 other number
-      makeQuestion('3', ['George Washington']),
-      makeQuestion('4', ['freedom of speech']),
-      makeQuestion('5', ['Congress']),
+      makeQuestion('1001', ['100']),
+      makeQuestion('1002', ['9']),
+      makeQuestion('1003', ['George Washington']),
+      makeQuestion('1004', ['freedom of speech']),
+      makeQuestion('1005', ['Congress']),
     ]
     const options = buildOptions(mixedBank[0], mixedBank)
+    expect(options).toHaveLength(4)
+    expect(options).toContain('100')
+  })
+
+  it('uses curated distractors when question number is in DISTRACTORS', () => {
+    // Q21: "How many U.S. senators?" → correct: "100", curated has "50", "435", etc.
+    const q21 = makeQuestion('21', ['100'])
+    const options = buildOptions(q21, [q21])
     expect(options).toHaveLength(4)
     expect(options).toContain('100')
   })

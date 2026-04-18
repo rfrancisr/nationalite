@@ -1,5 +1,6 @@
 import type { Question } from '@/types'
 import { QUIZ_SIZE } from './constants'
+import { DISTRACTORS } from './distractors'
 
 type AnswerCategory = 'number' | 'name' | 'other'
 
@@ -23,22 +24,28 @@ export function pickQuizQuestions(questions: Question[], size = QUIZ_SIZE): Ques
 
 export function buildOptions(question: Question, allQuestions: Question[]): string[] {
   const correct = question.answers[0]
-  const correctCategory = categorize(correct)
 
+  // Use curated distractors for this question number when available
+  const curated = (DISTRACTORS[question.number] ?? [])
+    .filter((d) => !question.answers.some((a) => a.trim().toLowerCase() === d.trim().toLowerCase()))
+    .sort(() => Math.random() - 0.5)
+
+  if (curated.length >= 3) {
+    return [correct, ...curated.slice(0, 3)].sort(() => Math.random() - 0.5)
+  }
+
+  // Fallback: pick type-matched answers from the rest of the question bank
+  const correctCategory = categorize(correct)
   const pool = allQuestions
     .filter((q) => q.id !== question.id)
     .flatMap((q) => q.answers)
     .filter((a, i, arr) => a !== correct && arr.indexOf(a) === i)
 
-  const sameType = pool.filter((a) => categorize(a) === correctCategory)
-  const fallback = pool.filter((a) => categorize(a) !== correctCategory)
+  const sameType = [...pool.filter((a) => categorize(a) === correctCategory)].sort(() => Math.random() - 0.5)
+  const fallback = [...pool.filter((a) => categorize(a) !== correctCategory)].sort(() => Math.random() - 0.5)
+  const poolDistractors = [...sameType, ...fallback].slice(0, 3 - curated.length)
 
-  const shuffledSame = [...sameType].sort(() => Math.random() - 0.5)
-  const shuffledFallback = [...fallback].sort(() => Math.random() - 0.5)
-
-  // Fill from same-type first, fall back to other types only if needed
-  const distractors = [...shuffledSame, ...shuffledFallback].slice(0, 3)
-  return [correct, ...distractors].sort(() => Math.random() - 0.5)
+  return [correct, ...curated, ...poolDistractors].sort(() => Math.random() - 0.5)
 }
 
 export function isCorrect(chosen: string, question: Question): boolean {
