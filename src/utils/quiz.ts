@@ -23,7 +23,7 @@ export function pickQuizQuestions(questions: Question[], size = QUIZ_SIZE): Ques
 }
 
 export function buildOptions(question: Question, allQuestions: Question[]): string[] {
-  const correct = question.answers[0]
+  const correct = question.answers[Math.floor(Math.random() * question.answers.length)]
 
   // Use curated distractors for this question number when available
   const curated = (DISTRACTORS[question.number] ?? [])

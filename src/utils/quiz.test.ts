@@ -29,9 +29,9 @@ describe('buildOptions', () => {
     expect(buildOptions(bank[0], bank)).toHaveLength(4)
   })
 
-  it('includes the correct answer', () => {
+  it('includes one of the correct answers', () => {
     const options = buildOptions(bank[0], bank)
-    expect(options).toContain(bank[0].answers[0])
+    expect(bank[0].answers.some((a) => options.includes(a))).toBe(true)
   })
 
   it('returns no duplicate options', () => {
