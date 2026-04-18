@@ -7,7 +7,8 @@ interface AuthState {
   user: User | null
   loading: boolean
   init: () => () => void
-  signInWithEmail: (email: string) => Promise<{ error: string | null }>
+  signIn: (email: string, password: string) => Promise<{ error: string | null }>
+  signUp: (email: string, password: string) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
 }
 
@@ -19,6 +20,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   init: () => {
     supabase.auth.getSession().then(({ data }) => {
       set({ session: data.session, user: data.session?.user ?? null, loading: false })
+    }).catch(() => {
+      set({ loading: false })
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -28,11 +31,13 @@ export const useAuthStore = create<AuthState>((set) => ({
     return () => subscription.unsubscribe()
   },
 
-  signInWithEmail: async (email) => {
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: window.location.origin },
-    })
+  signIn: async (email, password) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    return { error: error?.message ?? null }
+  },
+
+  signUp: async (email, password) => {
+    const { error } = await supabase.auth.signUp({ email, password })
     return { error: error?.message ?? null }
   },
 
