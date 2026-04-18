@@ -11,20 +11,20 @@ export default function Flashcard({ question, answers, flipped, onFlip }: Props)
   return (
     <div className="perspective-1000 w-full max-w-lg mx-auto" style={{ perspective: 1000 }}>
       <motion.button
-        className="relative w-full min-h-52 sm:min-h-64 cursor-pointer select-none"
+        className="relative w-full min-h-64 sm:min-h-72 cursor-pointer select-none"
         onClick={onFlip}
         style={{ transformStyle: 'preserve-3d', touchAction: 'manipulation' }}
         animate={{ rotateY: flipped ? 180 : 0 }}
         transition={{ duration: 0.25, ease: 'easeInOut' }}
-        aria-label={flipped ? 'Card answer' : 'Card question — click to flip'}
+        aria-label={flipped ? 'Card answer — tap to flip back' : 'Card question — tap to reveal answer'}
       >
         {/* Front */}
         <div
           className="absolute inset-0 flex flex-col items-center justify-center gap-4 rounded-2xl bg-white border border-gray-200 shadow-md p-8 backface-hidden"
           style={{ backfaceVisibility: 'hidden' }}
         >
-          <p className="text-lg font-semibold text-gray-800 text-center">{question}</p>
-          <p className="text-sm text-gray-400">Tap to reveal</p>
+          <p className="text-xl font-semibold text-gray-800 text-center">{question}</p>
+          <p className="text-base text-gray-500">Tap to reveal answer</p>
         </div>
 
         {/* Back */}
@@ -34,12 +34,12 @@ export default function Flashcard({ question, answers, flipped, onFlip }: Props)
         >
           {flipped && (
             <>
-              <p className="text-xs font-medium text-indigo-400 uppercase tracking-wide mb-1">
+              <p className="text-sm font-semibold text-indigo-500 uppercase tracking-wide mb-1">
                 Accepted answer{answers.length > 1 ? 's' : ''}
               </p>
-              <ul className="space-y-1 text-center">
+              <ul className="space-y-2 text-center">
                 {answers.map((a) => (
-                  <li key={a} className="text-base font-semibold text-indigo-800">{a}</li>
+                  <li key={a} className="text-xl font-semibold text-indigo-800">{a}</li>
                 ))}
               </ul>
             </>

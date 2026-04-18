@@ -112,7 +112,7 @@ export default function FlashcardsPage() {
 
     return (
       <div className="max-w-lg mx-auto px-4 py-12 space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900 text-center">Choose a deck</h1>
+        <h1 className="text-3xl font-bold text-gray-900 text-center">Choose a deck</h1>
         <div className="space-y-3">
           <DeckButton
             label="All Cards"
@@ -149,21 +149,21 @@ export default function FlashcardsPage() {
     return (
       <div className="max-w-lg mx-auto px-4 py-12 text-center space-y-6">
         <div className="text-5xl">🎉</div>
-        <h1 className="text-2xl font-bold text-gray-900">Session complete!</h1>
-        <p className="text-gray-600">{reviewedCount} cards reviewed</p>
-        <p className="text-gray-500 text-sm">
+        <h1 className="text-3xl font-bold text-gray-900">Session complete!</h1>
+        <p className="text-xl text-gray-700">{reviewedCount} cards reviewed</p>
+        <p className="text-base text-gray-600">
           Time: {minutes}m {seconds}s
         </p>
-        <div className="flex gap-3 justify-center pt-4">
+        <div className="flex gap-4 justify-center pt-4">
           <button
             onClick={() => { setDeckId(null); setIndex(0); setReviewedCount(0); setDone(false) }}
-            className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors"
+            className="px-8 py-4 bg-indigo-600 text-white rounded-xl font-semibold text-lg hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
           >
             Study again
           </button>
           <Link
             to="/"
-            className="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+            className="px-8 py-4 bg-gray-100 text-gray-700 rounded-xl font-semibold text-lg hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
           >
             Go home
           </Link>
@@ -175,19 +175,24 @@ export default function FlashcardsPage() {
   // ── Session ──────────────────────────────────────────────────────────────────
   const currentCard = deck[index]
   if (!currentCard) {
-    return <div className="p-8 text-center text-gray-500">No cards in this deck.</div>
+    return <div className="p-8 text-center text-gray-600">No cards in this deck.</div>
   }
 
   return (
     <div className="max-w-lg mx-auto px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
-      <div className="flex items-center justify-between text-sm text-gray-500">
+      <div className="flex items-center justify-between text-base text-gray-700">
         <button
           onClick={() => setDeckId(null)}
-          className="py-2 pr-2 hover:text-indigo-600 transition-colors"
+          className="py-2 pr-3 font-medium hover:text-indigo-600 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded"
         >
           ← Change deck
         </button>
-        <span className="font-medium">
+        <span
+          className="font-semibold"
+          aria-live="polite"
+          aria-atomic="true"
+          aria-label={`Card ${index + 1} of ${deck.length}`}
+        >
           {index + 1} / {deck.length}
         </span>
       </div>
@@ -218,12 +223,12 @@ function DeckButton({
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-xl hover:border-indigo-400 hover:shadow-sm transition-all text-left"
+      className="w-full flex items-center gap-4 p-5 bg-white border border-gray-200 rounded-xl hover:border-indigo-400 hover:shadow-sm transition-all text-left focus:outline-none focus:ring-2 focus:ring-indigo-500"
     >
-      {icon && <span className="text-2xl">{icon}</span>}
+      {icon && <span className="text-3xl">{icon}</span>}
       <div>
-        <p className="font-medium text-gray-900">{label}</p>
-        <p className="text-sm text-gray-500">{description}</p>
+        <p className="text-lg font-semibold text-gray-900">{label}</p>
+        <p className="text-base text-gray-600">{description}</p>
       </div>
     </button>
   )

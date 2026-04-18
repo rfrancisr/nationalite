@@ -10,7 +10,12 @@ const mockQuestions: Question[] = [
 ]
 
 const mockSave = vi.fn()
+const mockNavigate = vi.fn()
 
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom')
+  return { ...actual, useNavigate: () => mockNavigate }
+})
 vi.mock('@/hooks/use-questions', () => ({
   useQuestions: () => ({ data: mockQuestions }),
 }))
@@ -122,5 +127,43 @@ describe('QuizPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /see results/i }))
 
     expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument()
+  })
+
+  it('shows study missed button when at least one answer is wrong', () => {
+    wrap(<QuizPage />)
+    fireEvent.click(screen.getByRole('button', { name: /start quiz/i }))
+
+    fireEvent.click(screen.getByText('Wrong A'))
+    fireEvent.click(screen.getByRole('button', { name: /next question/i }))
+    fireEvent.click(screen.getByText('sets up the government'))
+    fireEvent.click(screen.getByRole('button', { name: /see results/i }))
+
+    expect(screen.getByRole('button', { name: /study 1 missed/i })).toBeInTheDocument()
+  })
+
+  it('does not show study missed button when all answers are correct', () => {
+    wrap(<QuizPage />)
+    fireEvent.click(screen.getByRole('button', { name: /start quiz/i }))
+
+    fireEvent.click(screen.getByText('the Constitution'))
+    fireEvent.click(screen.getByRole('button', { name: /next question/i }))
+    fireEvent.click(screen.getByText('sets up the government'))
+    fireEvent.click(screen.getByRole('button', { name: /see results/i }))
+
+    expect(screen.queryByRole('button', { name: /study.*missed/i })).not.toBeInTheDocument()
+  })
+
+  it('navigates to /flashcards with missedIds when study missed is clicked', () => {
+    wrap(<QuizPage />)
+    fireEvent.click(screen.getByRole('button', { name: /start quiz/i }))
+
+    fireEvent.click(screen.getByText('Wrong A'))
+    fireEvent.click(screen.getByRole('button', { name: /next question/i }))
+    fireEvent.click(screen.getByText('sets up the government'))
+    fireEvent.click(screen.getByRole('button', { name: /see results/i }))
+
+    fireEvent.click(screen.getByRole('button', { name: /study 1 missed/i }))
+
+    expect(mockNavigate).toHaveBeenCalledWith('/flashcards', { state: { missedIds: ['q1'] } })
   })
 })

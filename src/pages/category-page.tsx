@@ -15,7 +15,7 @@ export default function CategoryPage() {
 
   const category = categories.find((c) => c.slug === slug)
   if (!category) {
-    return <div className="p-8 text-center text-gray-500">Category not found.</div>
+    return <div className="p-8 text-center text-gray-600">Category not found.</div>
   }
 
   const categoryQuestions = questions.filter((q) => q.category_id === category.id)
@@ -27,20 +27,20 @@ export default function CategoryPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
-      <Link to="/questions" className="text-sm text-indigo-600 hover:underline">← All questions</Link>
+      <Link to="/questions" className="text-base text-indigo-600 hover:underline font-medium">← All questions</Link>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4">
         <span className="text-4xl">{category.icon}</span>
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{category.name}</h1>
-          <p className="text-sm text-gray-500">
+          <p className="text-base text-gray-600">
             {masteredCount} / {categoryQuestions.length} mastered
           </p>
         </div>
       </div>
 
       {/* Progress bar */}
-      <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+      <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
         <div
           className="h-full bg-green-500 transition-all"
           style={{ width: `${categoryQuestions.length ? (masteredCount / categoryQuestions.length) * 100 : 0}%` }}
@@ -49,7 +49,7 @@ export default function CategoryPage() {
 
       <Link
         to="/flashcards"
-        className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
+        className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl text-base font-semibold hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
       >
         Study this category
       </Link>
@@ -62,24 +62,25 @@ export default function CategoryPage() {
           return (
             <div key={q.id}>
               <button
-                className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-4 text-left hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
                 onClick={() => setExpandedId(isExpanded ? null : q.id)}
                 aria-expanded={isExpanded}
+                aria-label={`Question ${q.number}: ${q.question}`}
               >
-                <span className="text-xs text-gray-400 w-6 shrink-0">#{q.number}</span>
-                <span className="flex-1 text-sm text-gray-800">{q.question}</span>
+                <span className="text-sm text-gray-600 w-8 shrink-0 font-medium">#{q.number}</span>
+                <span className="flex-1 text-base text-gray-800">{q.question}</span>
                 <StatusBadge status={status} />
               </button>
 
               {isExpanded && (
-                <div className="px-4 pb-4 pt-1 bg-gray-50">
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                <div className="px-4 pb-4 pt-2 bg-gray-50">
+                  <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-2">
                     Accepted answer{q.answers.length > 1 ? 's' : ''}
                   </p>
-                  <ul className="space-y-1">
+                  <ul className="space-y-2">
                     {q.answers.map((a) => (
-                      <li key={a} className="text-sm text-gray-800 flex items-start gap-1">
-                        <span className="text-green-500 mt-0.5">✓</span> {a}
+                      <li key={a} className="text-base text-gray-800 flex items-start gap-2">
+                        <span className="text-green-600 mt-0.5 font-bold">✓</span> {a}
                       </li>
                     ))}
                   </ul>

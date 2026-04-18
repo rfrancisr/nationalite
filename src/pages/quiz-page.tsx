@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuestions } from '@/hooks/use-questions'
 import { useSaveQuizSession } from '@/hooks/use-save-quiz-session'
@@ -62,19 +62,37 @@ export default function QuizPage() {
     }
   }
 
+  // Keyboard shortcuts: 1-4 to pick answer, Enter to advance
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (phase === 'question') {
+        const options = optionsMap.get(quizQuestions[currentIndex]?.id) ?? []
+        const idx = parseInt(e.key, 10) - 1
+        if (idx >= 0 && idx < options.length) {
+          handleChoose(options[idx])
+        }
+      } else if (phase === 'feedback' && e.key === 'Enter') {
+        handleNext()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, currentIndex, quizQuestions, optionsMap])
+
   // ── Idle ─────────────────────────────────────────────────────────────────────
   if (phase === 'idle') {
     return (
       <div className="max-w-lg mx-auto px-4 py-12 text-center space-y-6">
         <div className="text-5xl">📝</div>
         <h1 className="text-3xl font-bold text-gray-900">Practice Quiz</h1>
-        <p className="text-gray-600">
+        <p className="text-gray-700">
           {QUIZ_SIZE} random questions · pass with {PASS_THRESHOLD}/{QUIZ_SIZE} correct
         </p>
         <button
           onClick={startQuiz}
           disabled={allQuestions.length === 0}
-          className="px-8 py-3 bg-indigo-600 text-white rounded-xl font-semibold text-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+          className="px-10 py-4 bg-indigo-600 text-white rounded-xl font-semibold text-xl hover:bg-indigo-700 disabled:opacity-50 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
         >
           Start quiz
         </button>
@@ -93,30 +111,30 @@ export default function QuizPage() {
     return (
       <div className="max-w-2xl mx-auto px-4 py-8 space-y-8">
         <div
-          className={`rounded-2xl p-6 text-center ${
+          className={`rounded-2xl p-8 text-center ${
             passed ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
           }`}
         >
-          <div className="text-5xl mb-2">{passed ? '🎉' : '📚'}</div>
-          <div className={`text-4xl font-bold ${passed ? 'text-green-600' : 'text-red-600'}`}>
+          <div className="text-5xl mb-3">{passed ? '🎉' : '📚'}</div>
+          <div className={`text-5xl font-bold ${passed ? 'text-green-600' : 'text-red-600'}`}>
             {score} / {quizQuestions.length}
           </div>
-          <div className={`text-xl font-semibold mt-1 ${passed ? 'text-green-700' : 'text-red-700'}`}>
+          <div className={`text-2xl font-semibold mt-2 ${passed ? 'text-green-700' : 'text-red-700'}`}>
             {passed ? 'Passed!' : 'Not yet — keep studying'}
           </div>
         </div>
 
-        <div className="flex gap-3 justify-center flex-wrap">
+        <div className="flex gap-4 justify-center flex-wrap">
           <button
             onClick={startQuiz}
-            className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors"
+            className="px-8 py-4 bg-indigo-600 text-white rounded-xl font-semibold text-lg hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
           >
             Try again
           </button>
           {missedIds.length > 0 && (
             <button
               onClick={() => navigate('/flashcards', { state: { missedIds } })}
-              className="px-5 py-2.5 bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600 transition-colors"
+              className="px-8 py-4 bg-amber-500 text-white rounded-xl font-semibold text-lg hover:bg-amber-600 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
             >
               Study {missedIds.length} missed
             </button>
@@ -124,7 +142,7 @@ export default function QuizPage() {
         </div>
 
         <div className="space-y-3">
-          <h2 className="text-lg font-semibold text-gray-900">Answer review</h2>
+          <h2 className="text-xl font-semibold text-gray-900">Answer review</h2>
           {quizQuestions.map((q, i) => {
             const a = answers.find((ans) => ans.question_id === q.id)
             return (
@@ -134,13 +152,13 @@ export default function QuizPage() {
                   a?.correct ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'
                 }`}
               >
-                <p className="text-sm font-medium text-gray-700 mb-1">
+                <p className="font-medium text-gray-800 mb-1">
                   {i + 1}. {q.question}
                 </p>
                 {!a?.correct && (
-                  <p className="text-sm text-red-700">Your answer: {a?.chosen_answer}</p>
+                  <p className="text-red-700">Your answer: {a?.chosen_answer}</p>
                 )}
-                <p className={`text-sm font-medium ${a?.correct ? 'text-green-700' : 'text-gray-700'}`}>
+                <p className={`font-medium ${a?.correct ? 'text-green-700' : 'text-gray-700'}`}>
                   Correct: {q.answers[0]}
                 </p>
               </div>
@@ -155,15 +173,20 @@ export default function QuizPage() {
   const current = quizQuestions[currentIndex]
   const options = optionsMap.get(current.id) ?? []
   const isLast = currentIndex + 1 >= quizQuestions.length
+  const correctCount = answers.filter((a) => a.correct).length
 
   return (
     <div className="max-w-lg mx-auto px-4 py-6 space-y-6">
       <div className="space-y-2">
-        <div className="flex justify-between text-sm text-gray-500">
+        <div
+          className="flex justify-between text-base text-gray-700 font-medium"
+          aria-live="polite"
+          aria-atomic="true"
+        >
           <span>Question {currentIndex + 1} of {quizQuestions.length}</span>
-          <span>{answers.filter((a) => a.correct).length} correct</span>
+          <span>{correctCount} correct</span>
         </div>
-        <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+        <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
           <div
             className="h-full bg-indigo-500 rounded-full transition-all"
             style={{ width: `${(currentIndex / quizQuestions.length) * 100}%` }}
@@ -172,12 +195,16 @@ export default function QuizPage() {
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-        <p className="text-lg font-medium text-gray-900">{current.question}</p>
+        <p className="text-xl font-medium text-gray-900">{current.question}</p>
       </div>
 
-      <div className="space-y-3">
-        {options.map((option) => {
-          let cls = 'w-full text-left p-4 rounded-xl border font-medium transition-colors '
+      {phase === 'question' && (
+        <p className="text-sm text-gray-500 text-center">Press 1–{options.length} to answer</p>
+      )}
+
+      <div className="space-y-3" role="group" aria-label="Answer options">
+        {options.map((option, i) => {
+          let cls = 'w-full text-left p-4 rounded-xl border font-medium transition-colors text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 '
           if (phase === 'feedback') {
             if (isCorrect(option, current)) {
               cls += 'border-green-400 bg-green-50 text-green-800'
@@ -194,8 +221,10 @@ export default function QuizPage() {
               key={option}
               onClick={() => phase === 'question' && handleChoose(option)}
               disabled={phase === 'feedback'}
+              aria-label={`Option ${i + 1}: ${option}`}
               className={cls}
             >
+              <span className="text-gray-400 font-normal mr-2">{i + 1}.</span>
               {option}
             </button>
           )
@@ -205,9 +234,10 @@ export default function QuizPage() {
       {phase === 'feedback' && (
         <button
           onClick={handleNext}
-          className="w-full py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-colors"
+          className="w-full py-4 bg-indigo-600 text-white rounded-xl font-semibold text-lg hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
         >
-          {isLast ? 'See results' : 'Next question'}
+          {isLast ? 'See results' : 'Next question'}{' '}
+          <span className="text-indigo-200 font-normal text-base ml-1">(Enter)</span>
         </button>
       )}
     </div>

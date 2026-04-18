@@ -32,7 +32,7 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8 space-y-8">
-      <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+      <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
 
       {/* Progress ring + quick stats */}
       <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm flex flex-col sm:flex-row items-center gap-6">
@@ -40,15 +40,15 @@ export default function DashboardPage() {
           <ProgressRing pct={masteryPct} />
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-2xl font-bold text-indigo-600">{Math.round(masteryPct * 100)}%</span>
-            <span className="text-xs text-gray-500">mastered</span>
+            <span className="text-sm text-gray-600">mastered</span>
           </div>
         </div>
         <div className="flex-1 space-y-2 text-center sm:text-left">
-          <p className="text-lg font-semibold text-gray-900">
+          <p className="text-xl font-semibold text-gray-900">
             {masteredCount} mastered
           </p>
-          <p className="text-sm text-gray-500">{masteredCount} of {TOTAL_QUESTIONS} questions</p>
-          <div className="flex gap-6 justify-center sm:justify-start pt-2">
+          <p className="text-base text-gray-600">{masteredCount} of {TOTAL_QUESTIONS} questions</p>
+          <div className="flex gap-8 justify-center sm:justify-start pt-2">
             <Stat label="Due today" value={dueToday} />
             <Stat label="Streak" value={`${streak}d`} />
           </div>
@@ -59,25 +59,25 @@ export default function DashboardPage() {
       <div className="grid grid-cols-2 gap-4">
         <Link
           to="/flashcards"
-          className="flex flex-col items-center justify-center gap-2 p-5 bg-indigo-600 text-white rounded-2xl font-semibold hover:bg-indigo-700 transition-colors"
+          className="flex flex-col items-center justify-center gap-3 py-6 px-4 bg-indigo-600 text-white rounded-2xl font-semibold text-lg hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
         >
-          <span className="text-3xl" aria-hidden="true">🃏</span>
-          <span>Start Flashcards</span>
+          <span className="text-4xl" aria-hidden="true">🃏</span>
+          <span>Flashcards</span>
         </Link>
         <Link
           to="/quiz"
-          className="flex flex-col items-center justify-center gap-2 p-5 bg-white border border-gray-200 text-gray-800 rounded-2xl font-semibold hover:border-indigo-400 hover:shadow-sm transition-all"
+          className="flex flex-col items-center justify-center gap-3 py-6 px-4 bg-white border-2 border-gray-200 text-gray-800 rounded-2xl font-semibold text-lg hover:border-indigo-400 hover:shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
         >
-          <span className="text-3xl" aria-hidden="true">📝</span>
+          <span className="text-4xl" aria-hidden="true">📝</span>
           <span>Take a Quiz</span>
         </Link>
       </div>
 
       {/* Recent quizzes */}
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-gray-900">Recent Quizzes</h2>
+        <h2 className="text-xl font-semibold text-gray-900">Recent Quizzes</h2>
         {sessions.length === 0 ? (
-          <p className="text-sm text-gray-400">No quizzes yet — take your first one!</p>
+          <p className="text-base text-gray-600">No quizzes yet — take your first one!</p>
         ) : (
           <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm space-y-3">
             <QuizSparkline sessions={sessions} />
@@ -85,12 +85,12 @@ export default function DashboardPage() {
               {[...sessions].reverse().map((s) => (
                 <div
                   key={s.id}
-                  className={`flex flex-col items-center px-3 py-2 rounded-xl text-sm font-medium ${
+                  className={`flex flex-col items-center px-4 py-2 rounded-xl font-medium ${
                     s.passed ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
                   }`}
                 >
-                  <span className="text-lg font-bold">{s.score}</span>
-                  <span className="text-xs opacity-70">/{QUIZ_SIZE}</span>
+                  <span className="text-xl font-bold">{s.score}</span>
+                  <span className="text-sm opacity-70">/{QUIZ_SIZE}</span>
                 </div>
               ))}
             </div>
@@ -100,23 +100,23 @@ export default function DashboardPage() {
 
       {/* Category breakdown */}
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-gray-900">By Category</h2>
+        <h2 className="text-xl font-semibold text-gray-900">By Category</h2>
         <div className="space-y-2">
           {categoryStats.map(({ cat, total, mastered }) => (
             <Link
               key={cat.id}
               to={`/categories/${cat.slug}`}
-              className="flex items-center gap-3 bg-white rounded-xl border border-gray-200 p-3 hover:border-indigo-300 transition-colors group"
+              className="flex items-center gap-4 bg-white rounded-xl border border-gray-200 p-4 hover:border-indigo-300 transition-colors group focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
-              <span className="text-xl shrink-0">{cat.icon}</span>
+              <span className="text-2xl shrink-0">{cat.icon}</span>
               <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-baseline mb-1">
-                  <span className="text-sm font-medium text-gray-800 truncate group-hover:text-indigo-600">
+                <div className="flex justify-between items-baseline mb-1.5">
+                  <span className="text-base font-medium text-gray-800 truncate group-hover:text-indigo-600">
                     {cat.name}
                   </span>
-                  <span className="text-xs text-gray-500 shrink-0 ml-2">{mastered}/{total}</span>
+                  <span className="text-sm text-gray-600 shrink-0 ml-2">{mastered}/{total}</span>
                 </div>
-                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-indigo-500 rounded-full transition-all"
                     style={{ width: total > 0 ? `${(mastered / total) * 100}%` : '0%' }}
@@ -152,9 +152,9 @@ function ProgressRing({ pct }: { pct: number }) {
 
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div aria-label={label}>
-      <p className="text-xl font-bold text-gray-900">{value}</p>
-      <p className="text-xs text-gray-500">{label}</p>
+    <div aria-label={`${label}: ${value}`}>
+      <p className="text-2xl font-bold text-gray-900">{value}</p>
+      <p className="text-sm text-gray-600">{label}</p>
     </div>
   )
 }
