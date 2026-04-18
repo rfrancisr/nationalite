@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:run": "vitest run",
-    "seed": "npx tsx scripts/seed-questions.ts"
+    "seed": "node --env-file=.env.local --import tsx/esm scripts/seed-questions.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.4",
