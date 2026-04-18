@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { useState, useMemo, useEffect } from 'react'
+import { Link, useLocation } from 'react-router-dom'
 import { useCategories } from '@/hooks/use-categories'
 import { useQuestions } from '@/hooks/use-questions'
 import { useUserProgress } from '@/hooks/use-user-progress'
@@ -8,7 +8,7 @@ import Flashcard from '@/components/flashcard'
 import RatingButtons from '@/components/rating-buttons'
 import type { SM2Rating, UserProgress, Question } from '@/types'
 
-type DeckId = 'all' | 'due' | string // string = category id
+type DeckId = 'all' | 'due' | 'missed' | string // string = category id
 
 interface SessionCard {
   question: Question
@@ -16,6 +16,12 @@ interface SessionCard {
 }
 
 export default function FlashcardsPage() {
+  const location = useLocation()
+  const missedIds = useMemo<string[] | null>(() => {
+    const state = location.state as { missedIds?: string[] } | null
+    return state?.missedIds ?? null
+  }, [location.state])
+
   const { data: categories = [] } = useCategories()
   const { data: questions = [] } = useQuestions()
   const { data: progress = [] } = useUserProgress()
@@ -27,6 +33,16 @@ export default function FlashcardsPage() {
   const [reviewedCount, setReviewedCount] = useState(0)
   const [done, setDone] = useState(false)
   const [startTime] = useState(Date.now)
+
+  useEffect(() => {
+    if (missedIds && missedIds.length > 0) {
+      setDeckId('missed')
+      setIndex(0)
+      setFlipped(false)
+      setDone(false)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const progressMap = useMemo(
     () => new Map(progress.map((p) => [p.question_id, p])),
@@ -44,6 +60,8 @@ export default function FlashcardsPage() {
         const p = progressMap.get(q.id)
         return !p || new Date(p.next_review_at) <= now
       })
+    } else if (deckId === 'missed') {
+      filtered = questions.filter((q) => missedIds?.includes(q.id))
     } else if (deckId !== 'all') {
       filtered = questions.filter((q) => q.category_id === deckId)
     }

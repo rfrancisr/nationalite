@@ -7,14 +7,11 @@ import LoginPage from '@/pages/login-page'
 import QuestionsPage from '@/pages/questions-page'
 import CategoryPage from '@/pages/category-page'
 import FlashcardsPage from '@/pages/flashcards-page'
+import QuizPage from '@/pages/quiz-page'
 import ProfilePage from '@/pages/profile-page'
 
 function DashboardPlaceholder() {
   return <div className="p-8 text-2xl font-semibold text-indigo-600">Dashboard — coming in M5</div>
-}
-
-function QuizPlaceholder() {
-  return <div className="p-8 text-2xl font-semibold text-indigo-600">Quiz — coming in M4</div>
 }
 
 export default function App() {
@@ -39,7 +36,7 @@ export default function App() {
         <Route path="/questions" element={<QuestionsPage />} />
         <Route path="/categories/:slug" element={<CategoryPage />} />
         <Route path="/flashcards" element={<FlashcardsPage />} />
-        <Route path="/quiz" element={<QuizPlaceholder />} />
+        <Route path="/quiz" element={<QuizPage />} />
         <Route path="/profile" element={<ProfilePage />} />
       </Route>
     </Routes>
