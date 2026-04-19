@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { getYesterdaysMissedIds, getStudiedTodayIds, isMiddayAvailable, isEveningAvailable } from './daily-plan'
+import { getYesterdaysMissedIds, getStudiedTodayIds, getStrugglingIds, isMiddayAvailable, isEveningAvailable } from './daily-plan'
+import { SM2_INITIAL_EASE } from './constants'
 import type { QuizSession, UserProgress } from '@/types'
 
 const today = new Date('2024-06-15T12:00:00Z')
@@ -90,6 +91,30 @@ describe('getStudiedTodayIds', () => {
   it('excludes cards with review_count = 0', () => {
     const progress = [makeProgress('q1', todayStr, 0)]
     expect(getStudiedTodayIds(progress, today)).toEqual([])
+  })
+})
+
+describe('getStrugglingIds', () => {
+  it('returns empty when no progress', () => {
+    expect(getStrugglingIds([])).toEqual([])
+  })
+
+  it('excludes cards at initial ease', () => {
+    const progress = [makeProgress('q1', todayStr)]
+    progress[0].ease_factor = SM2_INITIAL_EASE
+    expect(getStrugglingIds(progress)).toEqual([])
+  })
+
+  it('returns IDs where ease_factor has dropped below initial', () => {
+    const progress = [
+      { ...makeProgress('q1', todayStr), ease_factor: SM2_INITIAL_EASE - 0.2 },
+      { ...makeProgress('q2', todayStr), ease_factor: SM2_INITIAL_EASE },
+      { ...makeProgress('q3', todayStr), ease_factor: SM2_INITIAL_EASE - 0.15 },
+    ]
+    const result = getStrugglingIds(progress)
+    expect(result).toContain('q1')
+    expect(result).toContain('q3')
+    expect(result).not.toContain('q2')
   })
 })
 

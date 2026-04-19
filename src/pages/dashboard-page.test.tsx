@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react'
-import { vi } from 'vitest'
+import { vi, afterEach } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import DashboardPage from './dashboard-page'
 import type { Category, Question, UserProgress, QuizSession } from '@/types'
@@ -16,10 +16,11 @@ const mockQuestions: Question[] = [
 const past = new Date(Date.now() - 86_400_000).toISOString()
 const future = new Date(Date.now() + 86_400_000).toISOString()
 
-const mockProgress: UserProgress[] = [
+const defaultProgress: UserProgress[] = [
   { id: 'up1', user_id: 'u1', question_id: 'q1', status: 'mastered', ease_factor: 2.5, interval_days: 21, next_review_at: past, review_count: 5, correct_count: 5, updated_at: past },
   { id: 'up2', user_id: 'u1', question_id: 'q2', status: 'new', ease_factor: 2.5, interval_days: 1, next_review_at: future, review_count: 0, correct_count: 0, updated_at: past },
 ]
+let mockProgress = defaultProgress
 
 const mockSessions: QuizSession[] = [
   { id: 's1', user_id: 'u1', started_at: past, finished_at: past, score: 15, passed: true, answers: [] },
@@ -44,6 +45,8 @@ function wrap(ui: React.ReactElement) {
 }
 
 describe('DashboardPage', () => {
+  afterEach(() => { mockProgress = defaultProgress })
+
   it('shows page heading', () => {
     wrap(<DashboardPage />)
     expect(screen.getByRole('heading', { name: /dashboard/i })).toBeInTheDocument()
@@ -85,5 +88,16 @@ describe('DashboardPage', () => {
   it('shows take a quiz action link', () => {
     wrap(<DashboardPage />)
     expect(screen.getByRole('link', { name: /quiz/i })).toBeInTheDocument()
+  })
+
+  it('shows struggling cards Focus Area entry when ease has dropped', () => {
+    mockProgress = [{ ...defaultProgress[0], ease_factor: 2.3 }, defaultProgress[1]]
+    wrap(<DashboardPage />)
+    expect(screen.getByText(/marked hard or again/i)).toBeInTheDocument()
+  })
+
+  it('does not show struggling cards entry when all ease factors are at initial', () => {
+    wrap(<DashboardPage />)
+    expect(screen.queryByText(/marked hard or again/i)).not.toBeInTheDocument()
   })
 })

@@ -5,7 +5,7 @@ import { useQuestions } from '@/hooks/use-questions'
 import { useUserProgress } from '@/hooks/use-user-progress'
 import { useQuizSessions } from '@/hooks/use-quiz-sessions'
 import { calcStreak, countDueToday } from '@/utils/dashboard'
-import { getYesterdaysMissedIds, getStudiedTodayIds, isMiddayAvailable, isEveningAvailable } from '@/utils/daily-plan'
+import { getYesterdaysMissedIds, getStudiedTodayIds, getStrugglingIds, isMiddayAvailable, isEveningAvailable } from '@/utils/daily-plan'
 import { weakestCategory } from '@/utils/quiz-analysis'
 import { TOTAL_QUESTIONS, QUIZ_SIZE, PASS_THRESHOLD } from '@/utils/constants'
 import type { QuizSession } from '@/types'
@@ -23,6 +23,7 @@ export default function DashboardPage() {
   const yesterdayMissedIds = useMemo(() => getYesterdaysMissedIds(sessions), [sessions])
   const studiedTodayIds = useMemo(() => getStudiedTodayIds(progress), [progress])
   const focusCategory = useMemo(() => weakestCategory(sessions, questions, categories), [sessions, questions, categories])
+  const strugglingIds = useMemo(() => getStrugglingIds(progress), [progress])
 
   const categoryStats = useMemo(() =>
     categories.map((cat) => {
@@ -111,23 +112,41 @@ export default function DashboardPage() {
       </section>
 
       {/* Focus Area */}
-      {focusCategory && (
+      {(focusCategory || strugglingIds.length > 0) && (
         <section className="space-y-3">
           <h2 className="text-xl font-semibold text-gray-900">Focus Area</h2>
-          <Link
-            to="/flashcards"
-            state={{ categoryId: focusCategory.id }}
-            className="flex items-center gap-4 p-5 bg-amber-50 border border-amber-200 rounded-xl hover:border-amber-400 hover:shadow-sm transition-all group focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2"
-          >
-            <span className="text-3xl shrink-0">{focusCategory.icon}</span>
-            <div className="flex-1 min-w-0">
-              <p className="text-lg font-semibold text-gray-900 group-hover:text-amber-700">
-                {focusCategory.name}
-              </p>
-              <p className="text-base text-amber-700">Most missed in recent quizzes — review now</p>
-            </div>
-            <span className="text-amber-400 text-xl shrink-0">→</span>
-          </Link>
+          {focusCategory && (
+            <Link
+              to="/flashcards"
+              state={{ categoryId: focusCategory.id }}
+              className="flex items-center gap-4 p-5 bg-amber-50 border border-amber-200 rounded-xl hover:border-amber-400 hover:shadow-sm transition-all group focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2"
+            >
+              <span className="text-3xl shrink-0">{focusCategory.icon}</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-lg font-semibold text-gray-900 group-hover:text-amber-700">
+                  {focusCategory.name}
+                </p>
+                <p className="text-base text-amber-700">Most missed in recent quizzes — review now</p>
+              </div>
+              <span className="text-amber-400 text-xl shrink-0">→</span>
+            </Link>
+          )}
+          {strugglingIds.length > 0 && (
+            <Link
+              to="/flashcards"
+              state={{ missedIds: strugglingIds }}
+              className="flex items-center gap-4 p-5 bg-red-50 border border-red-200 rounded-xl hover:border-red-400 hover:shadow-sm transition-all group focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2"
+            >
+              <span className="text-3xl shrink-0">🔴</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-lg font-semibold text-gray-900 group-hover:text-red-700">
+                  {strugglingIds.length} card{strugglingIds.length !== 1 ? 's' : ''} marked Hard or Again
+                </p>
+                <p className="text-base text-red-700">Drill them until they stick</p>
+              </div>
+              <span className="text-red-400 text-xl shrink-0">→</span>
+            </Link>
+          )}
         </section>
       )}
 
