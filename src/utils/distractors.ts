@@ -744,15 +744,12 @@ export const DISTRACTORS: Record<number, string[]> = {
 
   57: [
     // Q: Who is the Chief Justice of the United States now?
-    // Correct: Current Chief Justice (John Roberts as of training; may vary)
-    'Clarence Thomas',
-    'Samuel Alito',
-    'Sonia Sotomayor',
-    'Elena Kagan',
+    // Correct: John Roberts
+    'Brett Kavanaugh',
+    'Antonin Scalia',
+    'JD Vance',
     'Neil Gorsuch',
     'Amy Coney Barrett',
-    'Brett Kavanaugh',
-    'Ketanji Brown Jackson',
   ],
 
   58: [
