@@ -24,11 +24,11 @@ describe('quizCategoryBreakdown', () => {
   it('counts misses per category and sorts by miss count descending', () => {
     const quizQs = [questions[0], questions[1], questions[2], questions[3], questions[4]]
     const answers: QuizAnswer[] = [
-      { question_id: 'q1', chosen_answer: 'wrong', correct: false },
-      { question_id: 'q2', chosen_answer: 'wrong', correct: false },
-      { question_id: 'q3', chosen_answer: 'wrong', correct: false },
-      { question_id: 'q4', chosen_answer: 'A4', correct: true },
-      { question_id: 'q5', chosen_answer: 'A5', correct: true },
+      { question_id: 'q1', chosen_answers: ['wrong'], correct: false },
+      { question_id: 'q2', chosen_answers: ['wrong'], correct: false },
+      { question_id: 'q3', chosen_answers: ['wrong'], correct: false },
+      { question_id: 'q4', chosen_answers: ['A4'], correct: true },
+      { question_id: 'q5', chosen_answers: ['A5'], correct: true },
     ]
     const result = quizCategoryBreakdown(answers, quizQs, cats)
     expect(result[0].category.id).toBe('cat1') // 2 missed
@@ -42,8 +42,8 @@ describe('quizCategoryBreakdown', () => {
   it('excludes categories with zero misses', () => {
     const quizQs = [questions[0], questions[2]]
     const answers: QuizAnswer[] = [
-      { question_id: 'q1', chosen_answer: 'A1', correct: true },
-      { question_id: 'q3', chosen_answer: 'wrong', correct: false },
+      { question_id: 'q1', chosen_answers: ['A1'], correct: true },
+      { question_id: 'q3', chosen_answers: ['wrong'], correct: false },
     ]
     const result = quizCategoryBreakdown(answers, quizQs, cats)
     expect(result).toHaveLength(1)
@@ -53,7 +53,7 @@ describe('quizCategoryBreakdown', () => {
   it('returns empty when all answers are correct', () => {
     const quizQs = [questions[0]]
     const answers: QuizAnswer[] = [
-      { question_id: 'q1', chosen_answer: 'A1', correct: true },
+      { question_id: 'q1', chosen_answers: ['A1'], correct: true },
     ]
     expect(quizCategoryBreakdown(answers, quizQs, cats)).toEqual([])
   })
@@ -70,17 +70,17 @@ describe('weakestCategory', () => {
         id: 's1', user_id: 'u1', started_at: '2024-06-14T08:00:00Z',
         finished_at: '2024-06-14T08:10:00Z', score: 3, passed: false,
         answers: [
-          { question_id: 'q1', chosen_answer: 'wrong', correct: false },
-          { question_id: 'q2', chosen_answer: 'wrong', correct: false },
-          { question_id: 'q3', chosen_answer: 'wrong', correct: false },
+          { question_id: 'q1', chosen_answers: ['wrong'], correct: false },
+          { question_id: 'q2', chosen_answers: ['wrong'], correct: false },
+          { question_id: 'q3', chosen_answers: ['wrong'], correct: false },
         ],
       },
       {
         id: 's2', user_id: 'u1', started_at: '2024-06-15T08:00:00Z',
         finished_at: '2024-06-15T08:10:00Z', score: 4, passed: false,
         answers: [
-          { question_id: 'q1', chosen_answer: 'wrong', correct: false },
-          { question_id: 'q3', chosen_answer: 'A3', correct: true },
+          { question_id: 'q1', chosen_answers: ['wrong'], correct: false },
+          { question_id: 'q3', chosen_answers: ['A3'], correct: true },
         ],
       },
     ]
@@ -93,7 +93,7 @@ describe('weakestCategory', () => {
     const sessions: QuizSession[] = [
       {
         id: 's1', user_id: 'u1', started_at: '2024-06-14T08:00:00Z',
-        answers: [{ question_id: 'q1', chosen_answer: 'A1', correct: true }],
+        answers: [{ question_id: 'q1', chosen_answers: ['A1'], correct: true }],
       },
     ]
     expect(weakestCategory(sessions, questions, cats)).toBeNull()

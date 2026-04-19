@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { pickQuizQuestions, buildOptions, isCorrect } from './quiz'
+import { pickQuizQuestions, buildOptions, isCorrect, getRequiredAnswerCount, isCorrectMultiSelect } from './quiz'
 import type { Question } from '@/types'
 
-function makeQuestion(id: string, answers: string[], category_id = 'cat1'): Question {
-  return { id, number: Number(id), category_id, question: `Question ${id}?`, answers }
+function makeQuestion(id: string, answers: string[], category_id = 'cat1', question = `Question ${id}?`): Question {
+  return { id, number: Number(id), category_id, question, answers }
 }
 
 const bank = Array.from({ length: 30 }, (_, i) => makeQuestion(String(i + 1), [`Answer ${i + 1}`]))
@@ -25,7 +25,7 @@ describe('pickQuizQuestions', () => {
 })
 
 describe('buildOptions', () => {
-  it('returns 4 options', () => {
+  it('returns 4 options for a single-answer question', () => {
     expect(buildOptions(bank[0], bank)).toHaveLength(4)
   })
 
@@ -97,6 +97,35 @@ describe('buildOptions', () => {
     expect(options).toHaveLength(4)
     expect(options).toContain('100')
   })
+
+  it('includes requiredCount correct answers for multi-select questions', () => {
+    const q = makeQuestion('1001', ['Equality', 'Liberty', 'Natural rights', 'Social contract', 'Self-government'],
+      'cat1', 'Name two important ideas.')
+    const otherBank = Array.from({ length: 10 }, (_, i) =>
+      makeQuestion(String(2000 + i), [`Other ${i}`])
+    )
+    for (let i = 0; i < 10; i++) {
+      const options = buildOptions(q, [q, ...otherBank], 2)
+      const correctInOptions = options.filter((o) =>
+        q.answers.some((a) => a.trim().toLowerCase() === o.trim().toLowerCase())
+      )
+      expect(correctInOptions.length).toBeGreaterThanOrEqual(2)
+    }
+  })
+
+  it('returns requiredCount + 3 options for multi-select questions', () => {
+    const q = makeQuestion('1001', ['A', 'B', 'C', 'D', 'E'], 'cat1', 'Name two things.')
+    const otherBank = Array.from({ length: 10 }, (_, i) => makeQuestion(String(2000 + i), [`Other ${i}`]))
+    const options = buildOptions(q, [q, ...otherBank], 2)
+    expect(options).toHaveLength(5)
+  })
+
+  it('returns requiredCount + 3 options for 3-answer multi-select questions', () => {
+    const q = makeQuestion('1001', ['A', 'B', 'C', 'D', 'E'], 'cat1', 'Name three things.')
+    const otherBank = Array.from({ length: 10 }, (_, i) => makeQuestion(String(2000 + i), [`Other ${i}`]))
+    const options = buildOptions(q, [q, ...otherBank], 3)
+    expect(options).toHaveLength(6)
+  })
 })
 
 describe('isCorrect', () => {
@@ -118,5 +147,71 @@ describe('isCorrect', () => {
 
   it('trims whitespace before comparing', () => {
     expect(isCorrect('  The President  ', makeQuestion('1', ['The President']))).toBe(true)
+  })
+})
+
+describe('getRequiredAnswerCount', () => {
+  it('returns 1 for a regular question', () => {
+    const q = makeQuestion('1', ['Yes'], 'cat', 'What is the Constitution?')
+    expect(getRequiredAnswerCount(q)).toBe(1)
+  })
+
+  it('returns 2 for "Name two ..." questions', () => {
+    const q = makeQuestion('10', ['Equality'], 'cat',
+      'Name two important ideas from the Declaration of Independence and the U.S. Constitution.')
+    expect(getRequiredAnswerCount(q)).toBe(2)
+  })
+
+  it('returns 2 for "What are two ..." questions', () => {
+    const q = makeQuestion('48', ['Attorney General'], 'cat', 'What are two Cabinet-level positions?')
+    expect(getRequiredAnswerCount(q)).toBe(2)
+  })
+
+  it('returns 3 for "Name three ..." questions', () => {
+    const q = makeQuestion('65', ['Freedom of speech'], 'cat',
+      'What are three rights of everyone living in the United States?')
+    expect(getRequiredAnswerCount(q)).toBe(3)
+  })
+
+  it('returns 3 for "Name three national ..." questions', () => {
+    const q = makeQuestion('126', ['New Year\'s Day'], 'cat', 'Name three national U.S. holidays.')
+    expect(getRequiredAnswerCount(q)).toBe(3)
+  })
+
+  it('returns 3 for "Name the three ..." questions', () => {
+    const q = makeQuestion('16', ['Legislative'], 'cat', 'Name the three branches of government.')
+    expect(getRequiredAnswerCount(q)).toBe(3)
+  })
+})
+
+describe('isCorrectMultiSelect', () => {
+  const q = makeQuestion('1', ['Equality', 'Liberty', 'Natural rights', 'Social contract'])
+
+  it('returns true when all selected answers are correct', () => {
+    expect(isCorrectMultiSelect(['Equality', 'Liberty'], q, 2)).toBe(true)
+  })
+
+  it('returns true when selecting different valid answers', () => {
+    expect(isCorrectMultiSelect(['Natural rights', 'Social contract'], q, 2)).toBe(true)
+  })
+
+  it('returns false when any selected answer is wrong', () => {
+    expect(isCorrectMultiSelect(['Equality', 'Manifest destiny'], q, 2)).toBe(false)
+  })
+
+  it('returns false when fewer than required are selected', () => {
+    expect(isCorrectMultiSelect(['Equality'], q, 2)).toBe(false)
+  })
+
+  it('returns false when more than required are selected', () => {
+    expect(isCorrectMultiSelect(['Equality', 'Liberty', 'Natural rights'], q, 2)).toBe(false)
+  })
+
+  it('is case-insensitive', () => {
+    expect(isCorrectMultiSelect(['equality', 'LIBERTY'], q, 2)).toBe(true)
+  })
+
+  it('handles 3-answer questions', () => {
+    expect(isCorrectMultiSelect(['Equality', 'Liberty', 'Natural rights'], q, 3)).toBe(true)
   })
 })

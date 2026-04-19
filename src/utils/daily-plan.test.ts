@@ -14,7 +14,7 @@ function makeSession(date: string, answers: { question_id: string; correct: bool
     finished_at: `${date}T08:10:00Z`,
     score: answers.filter((a) => a.correct).length,
     passed: false,
-    answers: answers.map((a) => ({ ...a, chosen_answer: 'test' })),
+    answers: answers.map((a) => ({ ...a, chosen_answers: ['test'] })),
   }
 }
 

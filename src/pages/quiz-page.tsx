@@ -3,7 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import { useQuestions } from '@/hooks/use-questions'
 import { useCategories } from '@/hooks/use-categories'
 import { useSaveQuizSession } from '@/hooks/use-save-quiz-session'
-import { pickQuizQuestions, buildOptions, isCorrect } from '@/utils/quiz'
+import {
+  pickQuizQuestions,
+  buildOptions,
+  isCorrect,
+  getRequiredAnswerCount,
+  isCorrectMultiSelect,
+} from '@/utils/quiz'
 import { quizCategoryBreakdown } from '@/utils/quiz-analysis'
 import { QUIZ_SIZE, PASS_THRESHOLD } from '@/utils/constants'
 import type { Question, QuizAnswer } from '@/types'
@@ -19,14 +25,15 @@ export default function QuizPage() {
   const [phase, setPhase] = useState<Phase>('idle')
   const [quizQuestions, setQuizQuestions] = useState<Question[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [chosenAnswer, setChosenAnswer] = useState<string | null>(null)
+  const [chosenAnswers, setChosenAnswers] = useState<string[]>([])
   const [answers, setAnswers] = useState<QuizAnswer[]>([])
   const [startedAt, setStartedAt] = useState('')
 
   const optionsMap = useMemo(() => {
     const map = new Map<string, string[]>()
     for (const q of quizQuestions) {
-      map.set(q.id, buildOptions(q, allQuestions))
+      const required = getRequiredAnswerCount(q)
+      map.set(q.id, buildOptions(q, allQuestions, required))
     }
     return map
   }, [quizQuestions, allQuestions])
@@ -36,18 +43,21 @@ export default function QuizPage() {
     setQuizQuestions(picked)
     setCurrentIndex(0)
     setAnswers([])
-    setChosenAnswer(null)
+    setChosenAnswers([])
     setStartedAt(new Date().toISOString())
     setPhase('question')
   }
 
-  function handleChoose(answer: string) {
+  function handleSubmit(selected: string[]) {
     const current = quizQuestions[currentIndex]
-    const correct = isCorrect(answer, current)
-    const newAnswer: QuizAnswer = { question_id: current.id, chosen_answer: answer, correct }
+    const required = getRequiredAnswerCount(current)
+    const correct = required > 1
+      ? isCorrectMultiSelect(selected, current, required)
+      : isCorrect(selected[0], current)
+    const newAnswer: QuizAnswer = { question_id: current.id, chosen_answers: selected, correct }
     const newAnswers = [...answers, newAnswer]
     setAnswers(newAnswers)
-    setChosenAnswer(answer)
+    setChosenAnswers(selected)
     setPhase('feedback')
 
     if (currentIndex + 1 >= quizQuestions.length) {
@@ -60,19 +70,24 @@ export default function QuizPage() {
       setPhase('done')
     } else {
       setCurrentIndex((i) => i + 1)
-      setChosenAnswer(null)
+      setChosenAnswers([])
       setPhase('question')
     }
   }
 
-  // Keyboard shortcuts: 1-4 to pick answer, Enter to advance
+  // Keyboard shortcuts: 1-4 (single-answer only), Enter to advance
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (phase === 'question') {
-        const options = optionsMap.get(quizQuestions[currentIndex]?.id) ?? []
-        const idx = parseInt(e.key, 10) - 1
-        if (idx >= 0 && idx < options.length) {
-          handleChoose(options[idx])
+        const current = quizQuestions[currentIndex]
+        if (!current) return
+        const required = getRequiredAnswerCount(current)
+        if (required === 1) {
+          const options = optionsMap.get(current.id) ?? []
+          const idx = parseInt(e.key, 10) - 1
+          if (idx >= 0 && idx < options.length) {
+            handleSubmit([options[idx]])
+          }
         }
       } else if (phase === 'feedback' && e.key === 'Enter') {
         handleNext()
@@ -213,11 +228,14 @@ export default function QuizPage() {
                 <p className="font-medium text-gray-800 mb-1">
                   {i + 1}. {q.question}
                 </p>
-                {!a?.correct && (
-                  <p className="text-red-700">Your answer: {a?.chosen_answer}</p>
+                {!a?.correct && a?.chosen_answers && (
+                  <p className="text-red-700">Your answer: {a.chosen_answers.join(' + ')}</p>
                 )}
                 <p className={`font-medium ${a?.correct ? 'text-green-700' : 'text-gray-700'}`}>
                   Correct: {q.answers[0]}
+                  {q.answers.length > 1 && getRequiredAnswerCount(q) > 1
+                    ? ` (and ${getRequiredAnswerCount(q) - 1} more from the list)`
+                    : ''}
                 </p>
               </div>
             )
@@ -230,8 +248,18 @@ export default function QuizPage() {
   // ── Question / Feedback ──────────────────────────────────────────────────────
   const current = quizQuestions[currentIndex]
   const options = optionsMap.get(current.id) ?? []
+  const required = getRequiredAnswerCount(current)
+  const isMulti = required > 1
   const isLast = currentIndex + 1 >= quizQuestions.length
   const correctCount = answers.filter((a) => a.correct).length
+
+  function toggleOption(option: string) {
+    setChosenAnswers((prev) => {
+      if (prev.includes(option)) return prev.filter((o) => o !== option)
+      if (prev.length >= required) return prev
+      return [...prev, option]
+    })
+  }
 
   return (
     <div className="max-w-lg mx-auto px-4 py-6 space-y-6">
@@ -257,16 +285,74 @@ export default function QuizPage() {
       </div>
 
       {phase === 'question' && (
-        <p className="text-sm text-gray-500 text-center">Press 1–{options.length} to answer</p>
+        <p className="text-sm text-gray-500 text-center">
+          {isMulti
+            ? `Select ${required} answers (${chosenAnswers.length}/${required} chosen)`
+            : `Press 1–${options.length} to answer`}
+        </p>
       )}
 
       <div className="space-y-3" role="group" aria-label="Answer options">
         {options.map((option, i) => {
+          const isSelected = chosenAnswers.includes(option)
+          const isOptionCorrect = isCorrect(option, current)
+
+          if (isMulti) {
+            let cls = 'w-full text-left p-4 rounded-xl border font-medium transition-colors text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 flex items-center gap-3 '
+            if (phase === 'feedback') {
+              if (isOptionCorrect && isSelected) {
+                cls += 'border-green-400 bg-green-50 text-green-800'
+              } else if (isOptionCorrect && !isSelected) {
+                cls += 'border-green-300 bg-green-50 text-green-700'
+              } else if (!isOptionCorrect && isSelected) {
+                cls += 'border-red-400 bg-red-50 text-red-800'
+              } else {
+                cls += 'border-gray-200 bg-white text-gray-400'
+              }
+            } else {
+              cls += isSelected
+                ? 'border-indigo-500 bg-indigo-50 text-indigo-800 cursor-pointer'
+                : 'border-gray-200 bg-white text-gray-800 hover:border-indigo-400 hover:bg-indigo-50 cursor-pointer'
+            }
+            return (
+              <button
+                key={option}
+                onClick={() => phase === 'question' && toggleOption(option)}
+                disabled={phase === 'feedback'}
+                aria-label={`Option ${i + 1}: ${option}`}
+                aria-pressed={isSelected}
+                className={cls}
+              >
+                <span
+                  className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center ${
+                    phase === 'feedback'
+                      ? isOptionCorrect
+                        ? 'border-green-500 bg-green-500'
+                        : isSelected
+                        ? 'border-red-500 bg-red-500'
+                        : 'border-gray-300'
+                      : isSelected
+                      ? 'border-indigo-500 bg-indigo-500'
+                      : 'border-gray-300'
+                  }`}
+                >
+                  {(isSelected || (phase === 'feedback' && isOptionCorrect)) && (
+                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </span>
+                {option}
+              </button>
+            )
+          }
+
+          // Single-answer: original button style
           let cls = 'w-full text-left p-3 rounded-xl border font-medium transition-colors text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 '
           if (phase === 'feedback') {
-            if (isCorrect(option, current)) {
+            if (isOptionCorrect) {
               cls += 'border-green-400 bg-green-50 text-green-800'
-            } else if (option === chosenAnswer) {
+            } else if (option === chosenAnswers[0]) {
               cls += 'border-red-400 bg-red-50 text-red-800'
             } else {
               cls += 'border-gray-200 bg-white text-gray-400'
@@ -277,7 +363,7 @@ export default function QuizPage() {
           return (
             <button
               key={option}
-              onClick={() => phase === 'question' && handleChoose(option)}
+              onClick={() => phase === 'question' && handleSubmit([option])}
               disabled={phase === 'feedback'}
               aria-label={`Option ${i + 1}: ${option}`}
               className={cls}
@@ -288,6 +374,16 @@ export default function QuizPage() {
           )
         })}
       </div>
+
+      {phase === 'question' && isMulti && (
+        <button
+          onClick={() => chosenAnswers.length === required && handleSubmit(chosenAnswers)}
+          disabled={chosenAnswers.length !== required}
+          className="w-full py-3 bg-indigo-600 text-white rounded-xl font-semibold text-base hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          Check answers ({chosenAnswers.length}/{required} selected)
+        </button>
+      )}
 
       {phase === 'feedback' && (
         <button

@@ -42,7 +42,7 @@ export interface QuizSession {
 
 export interface QuizAnswer {
   question_id: string
-  chosen_answer: string
+  chosen_answers: string[]
   correct: boolean
 }
 
