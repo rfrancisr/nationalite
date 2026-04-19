@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getYesterdaysMissedIds, getStudiedTodayIds } from './daily-plan'
+import { getYesterdaysMissedIds, getStudiedTodayIds, isMiddayAvailable, isEveningAvailable } from './daily-plan'
 import type { QuizSession, UserProgress } from '@/types'
 
 const today = new Date('2024-06-15T12:00:00Z')
@@ -90,5 +90,29 @@ describe('getStudiedTodayIds', () => {
   it('excludes cards with review_count = 0', () => {
     const progress = [makeProgress('q1', todayStr, 0)]
     expect(getStudiedTodayIds(progress, today)).toEqual([])
+  })
+})
+
+describe('isMiddayAvailable', () => {
+  it('returns false before 11 AM', () => {
+    expect(isMiddayAvailable(new Date('2024-06-15T10:59:00'))).toBe(false)
+  })
+  it('returns true at exactly 11 AM', () => {
+    expect(isMiddayAvailable(new Date('2024-06-15T11:00:00'))).toBe(true)
+  })
+  it('returns true after 11 AM', () => {
+    expect(isMiddayAvailable(new Date('2024-06-15T14:30:00'))).toBe(true)
+  })
+})
+
+describe('isEveningAvailable', () => {
+  it('returns false before 5 PM', () => {
+    expect(isEveningAvailable(new Date('2024-06-15T16:59:00'))).toBe(false)
+  })
+  it('returns true at exactly 5 PM', () => {
+    expect(isEveningAvailable(new Date('2024-06-15T17:00:00'))).toBe(true)
+  })
+  it('returns true after 5 PM', () => {
+    expect(isEveningAvailable(new Date('2024-06-15T20:00:00'))).toBe(true)
   })
 })

@@ -23,3 +23,11 @@ export function getStudiedTodayIds(progress: UserProgress[], today = new Date())
     .filter((p) => p.review_count > 0 && p.updated_at.slice(0, 10) === todayStr)
     .map((p) => p.question_id)
 }
+
+export function isMiddayAvailable(now = new Date()): boolean {
+  return now.getHours() >= 11
+}
+
+export function isEveningAvailable(now = new Date()): boolean {
+  return now.getHours() >= 17
+}

@@ -5,7 +5,7 @@ import { useQuestions } from '@/hooks/use-questions'
 import { useUserProgress } from '@/hooks/use-user-progress'
 import { useQuizSessions } from '@/hooks/use-quiz-sessions'
 import { calcStreak, countDueToday } from '@/utils/dashboard'
-import { getYesterdaysMissedIds, getStudiedTodayIds } from '@/utils/daily-plan'
+import { getYesterdaysMissedIds, getStudiedTodayIds, isMiddayAvailable, isEveningAvailable } from '@/utils/daily-plan'
 import { weakestCategory } from '@/utils/quiz-analysis'
 import { TOTAL_QUESTIONS, QUIZ_SIZE, PASS_THRESHOLD } from '@/utils/constants'
 import type { QuizSession } from '@/types'
@@ -81,8 +81,14 @@ export default function DashboardPage() {
             emoji="🌤️"
             title="Midday Review"
             subtitle="10 min"
-            description={dueToday > 0 ? `${dueToday} cards due today` : 'All caught up!'}
-            disabled={dueToday === 0}
+            description={
+              !isMiddayAvailable()
+                ? 'Available after 11:00 AM'
+                : dueToday > 0
+                  ? `${dueToday} cards due today`
+                  : 'All caught up!'
+            }
+            disabled={!isMiddayAvailable() || dueToday === 0}
             to="/flashcards"
             state={{ preselectedDeck: 'due' }}
           />
@@ -91,11 +97,13 @@ export default function DashboardPage() {
             title="Evening Recap"
             subtitle="5 min"
             description={
-              studiedTodayIds.length > 0
-                ? `${studiedTodayIds.length} studied today`
-                : 'Study some cards first'
+              !isEveningAvailable()
+                ? 'Available after 5:00 PM'
+                : studiedTodayIds.length > 0
+                  ? `${studiedTodayIds.length} studied today`
+                  : 'Study some cards first'
             }
-            disabled={studiedTodayIds.length === 0}
+            disabled={!isEveningAvailable() || studiedTodayIds.length === 0}
             to="/flashcards"
             state={{ studiedIds: studiedTodayIds, mixed: true }}
           />
