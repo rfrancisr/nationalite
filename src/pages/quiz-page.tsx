@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useQuestions } from '@/hooks/use-questions'
 import { useCategories } from '@/hooks/use-categories'
 import { useSaveQuizSession } from '@/hooks/use-save-quiz-session'
+import { useQuizSessions } from '@/hooks/use-quiz-sessions'
 import {
   pickQuizQuestions,
   buildOptions,
@@ -21,6 +22,7 @@ export default function QuizPage() {
   const { data: allQuestions = [] } = useQuestions()
   const { data: categories = [] } = useCategories()
   const { mutate: saveSession } = useSaveQuizSession()
+  const { data: recentSessions = [] } = useQuizSessions()
 
   const [phase, setPhase] = useState<Phase>('idle')
   const [quizQuestions, setQuizQuestions] = useState<Question[]>([])
@@ -39,7 +41,7 @@ export default function QuizPage() {
   }, [quizQuestions, allQuestions])
 
   function startQuiz() {
-    const picked = pickQuizQuestions(allQuestions)
+    const picked = pickQuizQuestions(allQuestions, QUIZ_SIZE, recentSessions)
     setQuizQuestions(picked)
     setCurrentIndex(0)
     setAnswers([])

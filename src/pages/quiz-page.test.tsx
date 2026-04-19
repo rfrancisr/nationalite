@@ -25,6 +25,9 @@ vi.mock('@/hooks/use-categories', () => ({
 vi.mock('@/hooks/use-save-quiz-session', () => ({
   useSaveQuizSession: () => ({ mutate: mockSave }),
 }))
+vi.mock('@/hooks/use-quiz-sessions', () => ({
+  useQuizSessions: () => ({ data: [] }),
+}))
 vi.mock('@/utils/quiz', async () => {
   const actual = await vi.importActual<typeof import('@/utils/quiz')>('@/utils/quiz')
   return {

@@ -1,5 +1,5 @@
-import type { Question } from '@/types'
-import { QUIZ_SIZE } from './constants'
+import type { Question, QuizSession } from '@/types'
+import { QUIZ_SIZE, STALE_THRESHOLD_DAYS } from './constants'
 import { DISTRACTORS } from './distractors'
 
 type AnswerCategory = 'number' | 'name' | 'other'
@@ -17,9 +17,35 @@ function categorize(answer: string): AnswerCategory {
   return isProperName ? 'name' : 'other'
 }
 
-export function pickQuizQuestions(questions: Question[], size = QUIZ_SIZE): Question[] {
-  const shuffled = [...questions].sort(() => Math.random() - 0.5)
-  return shuffled.slice(0, Math.min(size, shuffled.length))
+function buildLastSeenMap(sessions: QuizSession[]): Map<string, Date> {
+  const map = new Map<string, Date>()
+  for (const session of sessions) {
+    const date = new Date(session.started_at)
+    for (const ans of session.answers) {
+      const existing = map.get(ans.question_id)
+      if (!existing || date > existing) map.set(ans.question_id, date)
+    }
+  }
+  return map
+}
+
+export function pickQuizQuestions(
+  questions: Question[],
+  size = QUIZ_SIZE,
+  sessions: QuizSession[] = []
+): Question[] {
+  const cutoff = new Date(Date.now() - STALE_THRESHOLD_DAYS * 24 * 60 * 60 * 1000)
+  const lastSeen = buildLastSeenMap(sessions)
+
+  const stale = questions
+    .filter((q) => { const d = lastSeen.get(q.id); return !d || d <= cutoff })
+    .sort(() => Math.random() - 0.5)
+
+  const recent = questions
+    .filter((q) => { const d = lastSeen.get(q.id); return !!d && d > cutoff })
+    .sort(() => Math.random() - 0.5)
+
+  return [...stale, ...recent].slice(0, Math.min(size, questions.length))
 }
 
 export function getRequiredAnswerCount(question: Question): number {

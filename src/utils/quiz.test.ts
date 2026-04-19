@@ -1,9 +1,23 @@
 import { describe, it, expect } from 'vitest'
 import { pickQuizQuestions, buildOptions, isCorrect, getRequiredAnswerCount, isCorrectMultiSelect } from './quiz'
-import type { Question } from '@/types'
+import { STALE_THRESHOLD_DAYS } from './constants'
+import type { Question, QuizSession } from '@/types'
 
 function makeQuestion(id: string, answers: string[], category_id = 'cat1', question = `Question ${id}?`): Question {
   return { id, number: Number(id), category_id, question, answers }
+}
+
+function daysAgo(n: number): string {
+  return new Date(Date.now() - n * 24 * 60 * 60 * 1000).toISOString()
+}
+
+function makeSession(questionIds: string[], daysAgoCount: number): QuizSession {
+  return {
+    id: `s-${daysAgoCount}`,
+    user_id: 'u1',
+    started_at: daysAgo(daysAgoCount),
+    answers: questionIds.map((id) => ({ question_id: id, chosen_answers: ['x'], correct: true })),
+  }
 }
 
 const bank = Array.from({ length: 30 }, (_, i) => makeQuestion(String(i + 1), [`Answer ${i + 1}`]))
@@ -21,6 +35,61 @@ describe('pickQuizQuestions', () => {
   it('clamps to available questions when size exceeds bank', () => {
     const small = bank.slice(0, 5)
     expect(pickQuizQuestions(small, 20)).toHaveLength(5)
+  })
+
+  it('with no sessions behaves like pure random selection', () => {
+    const picked = pickQuizQuestions(bank, 10, [])
+    expect(picked).toHaveLength(10)
+    expect(new Set(picked.map((q) => q.id)).size).toBe(10)
+  })
+
+  it('prioritises questions not seen in the last STALE_THRESHOLD_DAYS days', () => {
+    // First 5 questions seen 1 day ago (recent), rest are stale
+    const recentIds = bank.slice(0, 5).map((q) => q.id)
+    const sessions = [makeSession(recentIds, 1)]
+
+    // Run many times; stale questions should dominate
+    for (let i = 0; i < 20; i++) {
+      const picked = pickQuizQuestions(bank, 10, sessions)
+      const recentInPicked = picked.filter((q) => recentIds.includes(q.id))
+      // With 25 stale questions and picking 10, recent ones should never appear
+      expect(recentInPicked).toHaveLength(0)
+    }
+  })
+
+  it('falls back to recent questions when stale pool is smaller than requested size', () => {
+    // Only 3 stale questions, request 10 → must pull from recent too
+    const recentIds = bank.slice(3).map((q) => q.id)  // 27 recent
+    const sessions = [makeSession(recentIds, 1)]
+
+    const picked = pickQuizQuestions(bank, 10, sessions)
+    expect(picked).toHaveLength(10)
+    const staleInPicked = picked.filter((q) => !recentIds.includes(q.id))
+    // All 3 stale questions must be included
+    expect(staleInPicked).toHaveLength(3)
+  })
+
+  it('treats questions seen exactly at threshold as stale', () => {
+    const recentIds = bank.slice(0, 5).map((q) => q.id)
+    // Seen exactly STALE_THRESHOLD_DAYS days ago → stale
+    const sessions = [makeSession(recentIds, STALE_THRESHOLD_DAYS)]
+
+    for (let i = 0; i < 10; i++) {
+      const picked = pickQuizQuestions(bank, 5, sessions)
+      // All picked should be stale (there are 25 stale + 5 threshold-stale = 30 stale)
+      expect(picked).toHaveLength(5)
+    }
+  })
+
+  it('treats questions seen just under threshold as recent', () => {
+    // 25 questions seen 1 day ago (recent), only 5 stale
+    const recentIds = bank.slice(5).map((q) => q.id)  // 25 recent
+    const sessions = [makeSession(recentIds, 1)]
+
+    const picked = pickQuizQuestions(bank, 10, sessions)
+    const staleInPicked = picked.filter((q) => !recentIds.includes(q.id))
+    // All 5 stale must appear since we need 10 and only 5 stale exist
+    expect(staleInPicked).toHaveLength(5)
   })
 })
 
