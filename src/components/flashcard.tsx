@@ -9,19 +9,19 @@ interface Props {
 
 export default function Flashcard({ question, answers, flipped, onFlip }: Props) {
   return (
-    <div className="perspective-1000 w-full max-w-lg mx-auto" style={{ perspective: 1000 }}>
+    <div className="w-full max-w-lg mx-auto" style={{ perspective: 1000 }}>
       <motion.button
-        className="relative w-full min-h-64 sm:min-h-72 cursor-pointer select-none"
+        className="w-full cursor-pointer select-none"
         onClick={onFlip}
-        style={{ transformStyle: 'preserve-3d', touchAction: 'manipulation' }}
+        style={{ transformStyle: 'preserve-3d', touchAction: 'manipulation', display: 'grid' }}
         animate={{ rotateY: flipped ? 180 : 0 }}
         transition={{ duration: 0.25, ease: 'easeInOut' }}
         aria-label={flipped ? 'Card answer — tap to flip back' : 'Card question — tap to reveal answer'}
       >
-        {/* Front */}
+        {/* Front — grid-area 1/1 stacks both faces in the same cell so the taller one sets height */}
         <div
-          className="absolute inset-0 flex flex-col items-center justify-center gap-4 rounded-2xl bg-white border border-gray-200 shadow-md p-8 backface-hidden"
-          style={{ backfaceVisibility: 'hidden' }}
+          className="flex flex-col items-center justify-center gap-4 rounded-2xl bg-white border border-gray-200 shadow-md p-8 min-h-64"
+          style={{ backfaceVisibility: 'hidden', gridArea: '1/1' }}
         >
           <p className="text-xl font-semibold text-gray-800 text-center">{question}</p>
           <p className="text-base text-gray-500">Tap to reveal answer</p>
@@ -29,8 +29,8 @@ export default function Flashcard({ question, answers, flipped, onFlip }: Props)
 
         {/* Back */}
         <div
-          className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-2xl bg-indigo-50 border border-indigo-200 shadow-md p-8"
-          style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
+          className="flex flex-col items-center justify-center gap-3 rounded-2xl bg-indigo-50 border border-indigo-200 shadow-md p-8 min-h-64"
+          style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)', gridArea: '1/1' }}
         >
           {flipped && (
             <>
