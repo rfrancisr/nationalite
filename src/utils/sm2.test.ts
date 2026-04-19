@@ -60,8 +60,14 @@ describe('applyRating', () => {
     expect(result.status).toBe('learning')
   })
 
-  it('next_review_at is in the future', () => {
-    const result = applyRating(base, 'good')
-    expect(new Date(result.next_review_at).getTime()).toBeGreaterThan(Date.now())
+  it('next_review_at is in the future for good and easy', () => {
+    expect(new Date(applyRating(base, 'good').next_review_at).getTime()).toBeGreaterThan(Date.now())
+    expect(new Date(applyRating(base, 'easy').next_review_at).getTime()).toBeGreaterThan(Date.now())
+  })
+
+  it('next_review_at is now for again and hard so they appear first in the next session', () => {
+    const before = Date.now()
+    expect(new Date(applyRating(base, 'again').next_review_at).getTime()).toBeLessThanOrEqual(before + 50)
+    expect(new Date(applyRating(base, 'hard').next_review_at).getTime()).toBeLessThanOrEqual(before + 50)
   })
 })

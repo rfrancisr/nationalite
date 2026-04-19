@@ -40,8 +40,10 @@ function wrap(ui: React.ReactElement) {
   return render(<MemoryRouter>{ui}</MemoryRouter>)
 }
 
+const mockUpdated = { ease_factor: 2.3, interval_days: 1, status: 'learning' as const, next_review_at: new Date().toISOString() }
+
 describe('FlashcardsPage', () => {
-  beforeEach(() => mockApplyRating.mockResolvedValue(undefined))
+  beforeEach(() => mockApplyRating.mockResolvedValue(mockUpdated))
 
   it('shows deck selection screen initially', () => {
     wrap(<FlashcardsPage />)
@@ -102,5 +104,38 @@ describe('FlashcardsPage', () => {
 
     await screen.findByText(/session complete/i)
     expect(screen.getByText(/2 cards reviewed/i)).toBeInTheDocument()
+  })
+
+  it('Again rating appends card to end and shows updated total', async () => {
+    wrap(<FlashcardsPage />)
+    fireEvent.click(screen.getByText(/all cards/i))
+
+    fireEvent.click(screen.getByRole('button', { name: /card question/i }))
+    fireEvent.click(screen.getByRole('button', { name: /again/i }))
+
+    await screen.findByText(/What does the Constitution do/i)
+    expect(screen.getByText(/2\s*\/\s*3/)).toBeInTheDocument()
+  })
+
+  it('Hard rating appends card to end and shows updated total', async () => {
+    wrap(<FlashcardsPage />)
+    fireEvent.click(screen.getByText(/all cards/i))
+
+    fireEvent.click(screen.getByRole('button', { name: /card question/i }))
+    fireEvent.click(screen.getByRole('button', { name: /hard/i }))
+
+    await screen.findByText(/What does the Constitution do/i)
+    expect(screen.getByText(/2\s*\/\s*3/)).toBeInTheDocument()
+  })
+
+  it('Good rating does not re-queue and total stays the same', async () => {
+    wrap(<FlashcardsPage />)
+    fireEvent.click(screen.getByText(/all cards/i))
+
+    fireEvent.click(screen.getByRole('button', { name: /card question/i }))
+    fireEvent.click(screen.getByRole('button', { name: /good/i }))
+
+    await screen.findByText(/What does the Constitution do/i)
+    expect(screen.getByText(/2\s*\/\s*2/)).toBeInTheDocument()
   })
 })

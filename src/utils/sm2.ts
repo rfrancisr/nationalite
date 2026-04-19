@@ -42,9 +42,10 @@ export function applyRating(card: CardState, rating: SM2Rating): UpdatedCardStat
         ? 'mastered'
         : 'learning'
 
-  const next_review_at = new Date(
-    Date.now() + interval_days * 24 * 60 * 60 * 1000,
-  ).toISOString()
+  const next_review_at =
+    rating === 'again' || rating === 'hard'
+      ? new Date().toISOString()
+      : new Date(Date.now() + interval_days * 24 * 60 * 60 * 1000).toISOString()
 
   return { ease_factor, interval_days, status, next_review_at }
 }

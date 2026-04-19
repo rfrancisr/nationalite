@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useRef, useMemo, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useCategories } from '@/hooks/use-categories'
 import { useQuestions } from '@/hooks/use-questions'
@@ -48,20 +48,28 @@ export default function FlashcardsPage() {
   const [reviewedCount, setReviewedCount] = useState(0)
   const [done, setDone] = useState(false)
   const [startTime] = useState(Date.now)
+  const [sessionCards, setSessionCards] = useState<SessionCard[] | null>(null)
+  const sessionInitializedRef = useRef(false)
+
+  function startSession(id: DeckId) {
+    sessionInitializedRef.current = false
+    setSessionCards(null)
+    setDeckId(id)
+    setIndex(0)
+    setFlipped(false)
+    setCardPhase('flashcard')
+    setDone(false)
+  }
 
   useEffect(() => {
     if (missedIds && missedIds.length > 0) {
-      setDeckId('missed')
-      setIndex(0); setFlipped(false); setCardPhase('flashcard'); setDone(false)
+      startSession('missed')
     } else if (studiedIds && studiedIds.length > 0) {
-      setDeckId('studied')
-      setIndex(0); setFlipped(false); setCardPhase('flashcard'); setDone(false)
+      startSession('studied')
     } else if (preselectedDeck) {
-      setDeckId(preselectedDeck)
-      setIndex(0); setFlipped(false); setCardPhase('flashcard'); setDone(false)
+      startSession(preselectedDeck)
     } else if (categoryId) {
-      setDeckId(categoryId)
-      setIndex(0); setFlipped(false); setCardPhase('flashcard'); setDone(false)
+      startSession(categoryId)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -114,21 +122,45 @@ export default function FlashcardsPage() {
     )
   }, [deckId, questions, progressMap, missedIds, studiedIds])
 
-  function advanceCard() {
-    if (index + 1 >= deck.length) {
+  useEffect(() => {
+    if (deckId !== null && deck.length > 0 && !sessionInitializedRef.current) {
+      sessionInitializedRef.current = true
+      setSessionCards([...deck])
+    }
+  }, [deck, deckId])
+
+  async function handleRate(rating: SM2Rating) {
+    const cards = sessionCards ?? deck
+    const card = cards[index]
+    const updated = await applyRating({ progress: card.progress, rating })
+    setReviewedCount((c) => c + 1)
+
+    let nextTotal = cards.length
+    if (rating === 'again' || rating === 'hard') {
+      nextTotal += 1
+      setSessionCards([
+        ...cards,
+        {
+          question: card.question,
+          progress: {
+            ...card.progress,
+            ease_factor: updated.ease_factor,
+            interval_days: updated.interval_days,
+            status: updated.status,
+            next_review_at: updated.next_review_at,
+            review_count: card.progress.review_count + 1,
+          },
+        },
+      ])
+    }
+
+    if (index + 1 >= nextTotal) {
       setDone(true)
     } else {
       setIndex((i) => i + 1)
       setFlipped(false)
       setCardPhase('flashcard')
     }
-  }
-
-  async function handleRate(rating: SM2Rating) {
-    const card = deck[index]
-    await applyRating({ progress: card.progress, rating })
-    setReviewedCount((c) => c + 1)
-    advanceCard()
   }
 
   function handleFlashcardContinue() {
@@ -156,12 +188,12 @@ export default function FlashcardsPage() {
           <DeckButton
             label="All Cards"
             description={`${questions.length} questions`}
-            onClick={() => { setDeckId('all'); setIndex(0); setFlipped(false); setCardPhase('flashcard'); setDone(false) }}
+            onClick={() => startSession('all')}
           />
           <DeckButton
             label="Due Today"
             description={`${dueCount} cards overdue`}
-            onClick={() => { setDeckId('due'); setIndex(0); setFlipped(false); setCardPhase('flashcard'); setDone(false) }}
+            onClick={() => startSession('due')}
           />
           {categories.map((cat) => {
             const count = questions.filter((q) => q.category_id === cat.id).length
@@ -171,7 +203,7 @@ export default function FlashcardsPage() {
                 label={cat.name}
                 description={`${count} questions`}
                 icon={cat.icon}
-                onClick={() => { setDeckId(cat.id); setIndex(0); setFlipped(false); setCardPhase('flashcard'); setDone(false) }}
+                onClick={() => startSession(cat.id)}
               />
             )
           })}
@@ -195,7 +227,7 @@ export default function FlashcardsPage() {
         </p>
         <div className="flex gap-4 justify-center pt-4">
           <button
-            onClick={() => { setDeckId(null); setIndex(0); setReviewedCount(0); setCardPhase('flashcard'); setDone(false) }}
+            onClick={() => { sessionInitializedRef.current = false; setSessionCards(null); setDeckId(null); setIndex(0); setReviewedCount(0); setCardPhase('flashcard'); setDone(false) }}
             className="px-8 py-4 bg-indigo-600 text-white rounded-xl font-semibold text-lg hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
           >
             Study again
@@ -212,7 +244,7 @@ export default function FlashcardsPage() {
   }
 
   // ── Session ──────────────────────────────────────────────────────────────────
-  const currentCard = deck[index]
+  const currentCard = (sessionCards ?? deck)[index]
   if (!currentCard) {
     return <div className="p-8 text-center text-gray-600">No cards in this deck.</div>
   }
@@ -221,7 +253,7 @@ export default function FlashcardsPage() {
     <div className="max-w-lg mx-auto px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
       <div className="flex items-center justify-between text-base text-gray-700">
         <button
-          onClick={() => setDeckId(null)}
+          onClick={() => { sessionInitializedRef.current = false; setSessionCards(null); setDeckId(null) }}
           className="py-2 pr-3 font-medium hover:text-indigo-600 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded"
         >
           ← Change deck
@@ -236,9 +268,9 @@ export default function FlashcardsPage() {
             className="font-semibold"
             aria-live="polite"
             aria-atomic="true"
-            aria-label={`Card ${index + 1} of ${deck.length}`}
+            aria-label={`Card ${index + 1} of ${(sessionCards ?? deck).length}`}
           >
-            {index + 1} / {deck.length}
+            {index + 1} / {(sessionCards ?? deck).length}
           </span>
         </div>
       </div>
