@@ -54,6 +54,18 @@ describe('applyRating', () => {
     expect(result.status).toBe('learning')
   })
 
+  it('Good on a struggling card restores ease to SM2_INITIAL_EASE', () => {
+    const card = { ...base, ease_factor: SM2_INITIAL_EASE - 0.4 }
+    const result = applyRating(card, 'good')
+    expect(result.ease_factor).toBe(SM2_INITIAL_EASE)
+  })
+
+  it('Easy on a struggling card restores ease to at least SM2_INITIAL_EASE', () => {
+    const card = { ...base, ease_factor: SM2_INITIAL_EASE - 0.4 }
+    const result = applyRating(card, 'easy')
+    expect(result.ease_factor).toBeGreaterThanOrEqual(SM2_INITIAL_EASE)
+  })
+
   it('status becomes learning from new on first rating', () => {
     const card = { ...base, status: 'new' as const }
     const result = applyRating(card, 'good')

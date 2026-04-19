@@ -1,6 +1,7 @@
 import type { CardStatus, SM2Rating } from '@/types'
 import {
   SM2_MIN_EASE,
+  SM2_INITIAL_EASE,
   MASTERED_INTERVAL_DAYS,
 } from './constants'
 
@@ -33,6 +34,10 @@ export function applyRating(card: CardState, rating: SM2Rating): UpdatedCardStat
       interval_days = Math.round(interval_days * ease_factor * 1.3)
       ease_factor = ease_factor + 0.1
       break
+  }
+
+  if (rating === 'good' || rating === 'easy') {
+    ease_factor = Math.max(ease_factor, SM2_INITIAL_EASE)
   }
 
   const status: CardStatus =
