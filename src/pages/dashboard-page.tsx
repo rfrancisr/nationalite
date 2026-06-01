@@ -174,21 +174,8 @@ export default function DashboardPage() {
         {sessions.length === 0 ? (
           <p className="text-base text-gray-600">No quizzes yet — take your first one!</p>
         ) : (
-          <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm space-y-3">
-            <QuizSparkline sessions={sessions} />
-            <div className="flex gap-3 flex-wrap">
-              {[...sessions].reverse().map((s) => (
-                <div
-                  key={s.id}
-                  className={`flex flex-col items-center px-4 py-2 rounded-xl font-medium ${
-                    s.passed ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
-                  }`}
-                >
-                  <span className="text-xl font-bold">{s.score}</span>
-                  <span className="text-sm opacity-70">/{QUIZ_SIZE}</span>
-                </div>
-              ))}
-            </div>
+          <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+            <QuizBarChart sessions={sessions} />
           </div>
         )}
       </section>
@@ -297,35 +284,39 @@ function SessionCard({
   )
 }
 
-function QuizSparkline({ sessions }: { sessions: QuizSession[] }) {
-  const sorted = [...sessions].reverse()
-  const W = 300
-  const H = 50
-  const PAD = 8
-  const xStep = sorted.length > 1 ? (W - 2 * PAD) / (sorted.length - 1) : 0
-  const yScale = (score: number) => PAD + (1 - score / QUIZ_SIZE) * (H - 2 * PAD)
-  const thresholdY = yScale(PASS_THRESHOLD)
-
-  const points = sorted
-    .map((s, i) => `${PAD + i * xStep},${yScale(s.score ?? 0)}`)
-    .join(' ')
+function QuizBarChart({ sessions }: { sessions: QuizSession[] }) {
+  const last10 = sessions.slice(-10)
+  const W = 320
+  const SLOT_W = W / 10
+  const BAR_W = 18
+  const BAR_TOP = 24
+  const BAR_BOTTOM = 82
+  const BAR_H = BAR_BOTTOM - BAR_TOP
+  const DATE_Y = 97
+  const SVG_H = 104
+  const thresholdY = BAR_BOTTOM - (PASS_THRESHOLD / QUIZ_SIZE) * BAR_H
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-12" aria-hidden="true">
-      <line x1={PAD} y1={thresholdY} x2={W - PAD} y2={thresholdY}
+    <svg viewBox={`0 0 ${W} ${SVG_H}`} className="w-full" aria-hidden="true">
+      <line x1={0} y1={thresholdY} x2={W} y2={thresholdY}
         stroke="#d1d5db" strokeWidth="1" strokeDasharray="4 3" />
-      {sorted.length > 1 && (
-        <polyline points={points} fill="none" stroke="#a5b4fc" strokeWidth="2"
-          strokeLinecap="round" strokeLinejoin="round" />
-      )}
-      {sorted.map((s, i) => (
-        <circle key={s.id}
-          cx={PAD + i * xStep}
-          cy={yScale(s.score ?? 0)}
-          r="4"
-          fill={s.passed ? '#22c55e' : '#ef4444'}
-        />
-      ))}
+      <text x={W - 2} y={thresholdY - 3} textAnchor="end" fontSize="8" fill="#9ca3af">pass</text>
+      {last10.map((s, i) => {
+        const barH = Math.max(2, ((s.score ?? 0) / QUIZ_SIZE) * BAR_H)
+        const barY = BAR_BOTTOM - barH
+        const cx = SLOT_W * i + SLOT_W / 2
+        const date = new Date(s.started_at)
+        const label = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        return (
+          <g key={s.id}>
+            <rect x={cx - BAR_W / 2} y={barY} width={BAR_W} height={barH}
+              rx={3} fill={s.passed ? '#22c55e' : '#ef4444'} opacity={0.85} />
+            <text x={cx} y={barY - 4} textAnchor="middle" fontSize="10" fontWeight="600"
+              fill={s.passed ? '#15803d' : '#dc2626'}>{s.score}</text>
+            <text x={cx} y={DATE_Y} textAnchor="middle" fontSize="8" fill="#6b7280">{label}</text>
+          </g>
+        )
+      })}
     </svg>
   )
 }
